@@ -1,0 +1,453 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Editor — BannerFlow{% endblock %}
+
+{% block extra_css %}
+<style>
+    main { padding: 0; }
+    .footer-custom { display: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="editor-container">
+    <!-- LEFT SIDEBAR: Tools -->
+    <div class="editor-sidebar">
+        <div class="sidebar-section">
+            <h6>Elementos</h6>
+            <button class="tool-btn" onclick="addText('Título del Producto', 28, true, 'title')">
+                <i class="bi bi-type-h1"></i> Título
+            </button>
+            <button class="tool-btn" onclick="addText('$99.990', 36, true, 'original_price')">
+                <i class="bi bi-currency-dollar"></i> Precio Original
+            </button>
+            <button class="tool-btn" onclick="addText('$49.990', 42, true, 'offer_price')">
+                <i class="bi bi-tag-fill"></i> Precio Oferta
+            </button>
+            <button class="tool-btn" onclick="addImagePlaceholder()">
+                <i class="bi bi-image"></i> Imagen Producto
+            </button>
+            <button class="tool-btn" onclick="addText('Tienda', 18, false, 'store_name')">
+                <i class="bi bi-shop"></i> Nombre Tienda
+            </button>
+            <button class="tool-btn" onclick="addText('¡OFERTA!', 24, true, 'badge')">
+                <i class="bi bi-star-fill"></i> Badge / Etiqueta
+            </button>
+        </div>
+
+        <div class="sidebar-section">
+            <h6>Formas</h6>
+            <button class="tool-btn" onclick="addRect()">
+                <i class="bi bi-square-fill"></i> Rectángulo
+            </button>
+            <button class="tool-btn" onclick="addCircle()">
+                <i class="bi bi-circle-fill"></i> Círculo
+            </button>
+            <button class="tool-btn" onclick="addLine()">
+                <i class="bi bi-dash-lg"></i> Línea
+            </button>
+        </div>
+
+        <div class="sidebar-section">
+            <h6>Fondo del Canvas</h6>
+            <div class="prop-group">
+                <label>Color Sólido</label>
+                <input type="color" id="bgColor" value="#1a1a2e" onchange="setCanvasBg(this.value)">
+            </div>
+            <div class="prop-group">
+                <label>Gradiente</label>
+                <div class="d-flex gap-2">
+                    <input type="color" id="gradColor1" value="#7c3aed" style="flex:1">
+                    <input type="color" id="gradColor2" value="#f472b6" style="flex:1">
+                </div>
+                <button class="tool-btn mt-2" onclick="setCanvasGradient()">
+                    <i class="bi bi-palette"></i> Aplicar Gradiente
+                </button>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <h6>Acciones</h6>
+            <button class="tool-btn" onclick="deleteSelected()" style="border-color: #ef4444;">
+                <i class="bi bi-trash" style="color: #ef4444;"></i> Eliminar Selección
+            </button>
+            <button class="tool-btn" onclick="bringForward()">
+                <i class="bi bi-front"></i> Traer al Frente
+            </button>
+            <button class="tool-btn" onclick="sendBackward()">
+                <i class="bi bi-back"></i> Enviar Atrás
+            </button>
+        </div>
+    </div>
+
+    <!-- CENTER: Canvas -->
+    <div class="editor-canvas-area">
+        <div class="canvas-wrapper">
+            <canvas id="bannerCanvas" width="540" height="540"></canvas>
+        </div>
+    </div>
+
+    <!-- RIGHT SIDEBAR: Properties -->
+    <div class="editor-sidebar-right">
+        <div class="sidebar-section">
+            <h6>Propiedades</h6>
+            <div id="noSelection" class="text-center text-muted py-4">
+                <i class="bi bi-cursor" style="font-size: 2rem;"></i>
+                <p class="mt-2" style="font-size: 0.85rem;">Selecciona un elemento para editar sus propiedades</p>
+            </div>
+            <div id="propPanel" style="display: none;">
+                <div class="prop-group">
+                    <label>Color / Relleno</label>
+                    <input type="color" id="propFill" value="#ffffff" onchange="updateProp('fill', this.value)">
+                </div>
+                <div class="prop-group" id="propStrokeGroup">
+                    <label>Borde</label>
+                    <input type="color" id="propStroke" value="#000000" onchange="updateProp('stroke', this.value)">
+                    <input type="range" id="propStrokeWidth" min="0" max="10" value="0" class="mt-1" onchange="updateProp('strokeWidth', parseInt(this.value))">
+                </div>
+                <div class="prop-group" id="propFontGroup">
+                    <label>Fuente</label>
+                    <select id="propFontFamily" onchange="updateProp('fontFamily', this.value)">
+                        <option value="Poppins">Poppins</option>
+                        <option value="Inter">Inter</option>
+                        <option value="Arial">Arial</option>
+                        <option value="Georgia">Georgia</option>
+                        <option value="Impact">Impact</option>
+                        <option value="Courier New">Courier New</option>
+                    </select>
+                </div>
+                <div class="prop-group" id="propFontSizeGroup">
+                    <label>Tamaño Texto</label>
+                    <input type="range" id="propFontSize" min="10" max="120" value="28" onchange="updateProp('fontSize', parseInt(this.value))">
+                    <span id="propFontSizeVal" class="text-muted" style="font-size:0.8rem;">28px</span>
+                </div>
+                <div class="prop-group">
+                    <label>Opacidad</label>
+                    <input type="range" id="propOpacity" min="0" max="100" value="100" onchange="updateProp('opacity', this.value / 100)">
+                </div>
+                <div class="prop-group">
+                    <label>Posición X</label>
+                    <input type="number" id="propLeft" onchange="updateProp('left', parseFloat(this.value))">
+                </div>
+                <div class="prop-group">
+                    <label>Posición Y</label>
+                    <input type="number" id="propTop" onchange="updateProp('top', parseFloat(this.value))">
+                </div>
+            </div>
+        </div>
+
+        <hr style="border-color: var(--border-color);">
+
+        <div class="sidebar-section">
+            <h6>Guardar Plantilla</h6>
+            <div class="prop-group">
+                <label>Nombre</label>
+                <input type="text" id="templateName" value="{{ template.name|default:'Mi Plantilla' }}" placeholder="Nombre de la plantilla">
+            </div>
+            <button class="btn-gradient w-100" onclick="saveTemplate()">
+                <i class="bi bi-save me-1"></i>Guardar
+            </button>
+            {% if template %}
+            <input type="hidden" id="templateId" value="{{ template.id }}">
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+{% if template %}
+<script id="templateInitData" type="application/json">{{ template_json|safe }}</script>
+{% endif %}
+<script>
+// ===== Canvas Init =====
+const CANVAS_DISPLAY = 540;
+const CANVAS_REAL = 1080;
+const SCALE = CANVAS_REAL / CANVAS_DISPLAY;
+
+const canvas = new fabric.Canvas('bannerCanvas', {
+    width: CANVAS_DISPLAY,
+    height: CANVAS_DISPLAY,
+    backgroundColor: '#1a1a2e',
+    preserveObjectStacking: true,
+});
+
+// ===== Add Elements =====
+function addText(text, fontSize, bold, dataType) {
+    const t = new fabric.IText(text, {
+        left: 50,
+        top: 50 + Math.random() * 200,
+        fontSize: fontSize,
+        fontWeight: bold ? '800' : '400',
+        fontFamily: 'Poppins',
+        fill: '#ffffff',
+        shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.5)', blur: 4, offsetX: 2, offsetY: 2 }),
+        dataType: dataType,
+    });
+    canvas.add(t);
+    canvas.setActiveObject(t);
+}
+
+function addImagePlaceholder() {
+    const rect = new fabric.Rect({
+        left: 120,
+        top: 80,
+        width: 300,
+        height: 300,
+        fill: 'rgba(255,255,255,0.1)',
+        stroke: '#7c3aed',
+        strokeWidth: 2,
+        strokeDashArray: [8, 4],
+        rx: 12,
+        ry: 12,
+        dataType: 'product_image',
+    });
+
+    const text = new fabric.Text('🖼 Imagen Producto', {
+        fontSize: 16,
+        fill: '#9ca3af',
+        fontFamily: 'Inter',
+        originX: 'center',
+        originY: 'center',
+    });
+
+    const group = new fabric.Group([rect, text], {
+        left: 120,
+        top: 80,
+        dataType: 'product_image',
+    });
+
+    canvas.add(group);
+    canvas.setActiveObject(group);
+}
+
+function addRect() {
+    const r = new fabric.Rect({
+        left: 50,
+        top: 50,
+        width: 200,
+        height: 100,
+        fill: '#7c3aed',
+        rx: 12,
+        ry: 12,
+        opacity: 0.8,
+    });
+    canvas.add(r);
+    canvas.setActiveObject(r);
+}
+
+function addCircle() {
+    const c = new fabric.Circle({
+        left: 100,
+        top: 100,
+        radius: 60,
+        fill: '#f472b6',
+        opacity: 0.8,
+    });
+    canvas.add(c);
+    canvas.setActiveObject(c);
+}
+
+function addLine() {
+    const l = new fabric.Line([50, 50, 300, 50], {
+        stroke: '#06b6d4',
+        strokeWidth: 3,
+    });
+    canvas.add(l);
+    canvas.setActiveObject(l);
+}
+
+// ===== Canvas Background =====
+function setCanvasBg(color) {
+    canvas.setBackgroundColor(color, canvas.renderAll.bind(canvas));
+}
+
+function setCanvasGradient() {
+    const c1 = document.getElementById('gradColor1').value;
+    const c2 = document.getElementById('gradColor2').value;
+    const gradient = new fabric.Gradient({
+        type: 'linear',
+        coords: { x1: 0, y1: 0, x2: CANVAS_DISPLAY, y2: CANVAS_DISPLAY },
+        colorStops: [
+            { offset: 0, color: c1 },
+            { offset: 1, color: c2 },
+        ]
+    });
+    canvas.setBackgroundColor(gradient, canvas.renderAll.bind(canvas));
+}
+
+// ===== Object Actions =====
+function deleteSelected() {
+    const obj = canvas.getActiveObject();
+    if (obj) {
+        canvas.remove(obj);
+        canvas.discardActiveObject();
+    }
+}
+
+function bringForward() {
+    const obj = canvas.getActiveObject();
+    if (obj) canvas.bringForward(obj);
+}
+
+function sendBackward() {
+    const obj = canvas.getActiveObject();
+    if (obj) canvas.sendBackwards(obj);
+}
+
+// ===== Properties Panel =====
+function updateProp(prop, value) {
+    const obj = canvas.getActiveObject();
+    if (!obj) return;
+    obj.set(prop, value);
+    canvas.renderAll();
+    if (prop === 'fontSize') {
+        document.getElementById('propFontSizeVal').textContent = value + 'px';
+    }
+}
+
+function showProperties(obj) {
+    document.getElementById('noSelection').style.display = 'none';
+    document.getElementById('propPanel').style.display = 'block';
+
+    document.getElementById('propFill').value = obj.fill && typeof obj.fill === 'string' ? obj.fill : '#ffffff';
+    document.getElementById('propStroke').value = obj.stroke || '#000000';
+    document.getElementById('propStrokeWidth').value = obj.strokeWidth || 0;
+    document.getElementById('propOpacity').value = Math.round((obj.opacity || 1) * 100);
+    document.getElementById('propLeft').value = Math.round(obj.left || 0);
+    document.getElementById('propTop').value = Math.round(obj.top || 0);
+
+    const isText = obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox';
+    document.getElementById('propFontGroup').style.display = isText ? 'block' : 'none';
+    document.getElementById('propFontSizeGroup').style.display = isText ? 'block' : 'none';
+
+    if (isText) {
+        document.getElementById('propFontFamily').value = obj.fontFamily || 'Poppins';
+        document.getElementById('propFontSize').value = obj.fontSize || 28;
+        document.getElementById('propFontSizeVal').textContent = (obj.fontSize || 28) + 'px';
+    }
+}
+
+function hideProperties() {
+    document.getElementById('noSelection').style.display = 'block';
+    document.getElementById('propPanel').style.display = 'none';
+}
+
+canvas.on('selection:created', (e) => showProperties(e.selected[0]));
+canvas.on('selection:updated', (e) => showProperties(e.selected[0]));
+canvas.on('selection:cleared', hideProperties);
+canvas.on('object:modified', (e) => showProperties(e.target));
+
+// ===== Save / Load Template =====
+async function saveTemplate() {
+    const name = document.getElementById('templateName').value.trim();
+    if (!name) {
+        alert('Ingresa un nombre para la plantilla');
+        return;
+    }
+
+    const canvasData = canvas.toJSON(['dataType']);
+    const templateIdEl = document.getElementById('templateId');
+    const templateId = templateIdEl ? templateIdEl.value : null;
+
+    const payload = {
+        name: name,
+        canvas_data: canvasData,
+    };
+
+    let url = '/api/templates/';
+    let method = 'POST';
+
+    if (templateId) {
+        url = `/api/templates/${templateId}/`;
+        method = 'PUT';
+    }
+
+    try {
+        const resp = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (resp.ok) {
+            const data = await resp.json();
+            if (!templateId) {
+                // Add hidden input so subsequent saves are updates
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.id = 'templateId';
+                input.value = data.id;
+                document.body.appendChild(input);
+            }
+            showToast('✅ Plantilla guardada correctamente');
+        } else {
+            showToast('❌ Error al guardar la plantilla');
+        }
+    } catch (err) {
+        showToast('❌ Error de conexión');
+    }
+}
+
+function loadTemplate(canvasData) {
+    canvas.loadFromJSON(canvasData, () => {
+        canvas.renderAll();
+    });
+}
+
+// ===== Load existing template if editing =====
+document.addEventListener('DOMContentLoaded', () => {
+    const initEl = document.getElementById('templateInitData');
+    if (initEl) {
+        const data = JSON.parse(initEl.textContent);
+        if (data && Object.keys(data).length > 0) {
+            loadTemplate(data);
+        }
+    }
+});
+
+// ===== Utils =====
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed; bottom: 24px; right: 24px; background: #1a1a24;
+        color: #f1f1f6; padding: 14px 24px; border-radius: 10px; font-weight: 500;
+        border: 1px solid #2d2d44; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        z-index: 10000; animation: fadeIn 0.3s;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+        const obj = canvas.getActiveObject();
+        if (obj && !obj.isEditing) {
+            deleteSelected();
+        }
+    }
+});
+</script>
+{% endblock %}

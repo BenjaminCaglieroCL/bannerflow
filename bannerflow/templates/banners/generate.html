@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Generar Banner — {{ template.name }}{% endblock %}
+
+{% block content %}
+<div class="generate-container">
+    <div class="text-center mb-4">
+        <h2 class="fw-bold">
+            <i class="bi bi-magic text-gradient me-2"></i>Generar Banner
+        </h2>
+        <p class="text-muted">Plantilla: <strong>{{ template.name }}</strong></p>
+    </div>
+
+    <!-- URL Input -->
+    <div class="url-input-group">
+        <input type="url" id="productUrl" placeholder="Pega el link del producto (MercadoLibre, Amazon, Sodimac, etc.)" autofocus>
+        <button class="btn-gradient" onclick="scrapeProduct()" id="scrapeBtn">
+            <i class="bi bi-search me-1"></i>Extraer
+        </button>
+    </div>
+
+    <!-- Extracted Data Preview -->
+    <div id="dataPreview" class="card-custom p-4 mb-4" style="display: none;">
+        <h6 class="text-muted text-uppercase fw-bold mb-3">
+            <i class="bi bi-check-circle-fill text-success me-1"></i>Datos Extraídos
+        </h6>
+        <div class="row align-items-center">
+            <div class="col-md-3 text-center">
+                <img id="previewImg" src="" alt="Producto" class="img-fluid rounded" style="max-height: 150px;">
+            </div>
+            <div class="col-md-9">
+                <p class="mb-1"><strong>Título:</strong> <span id="previewTitle"></span></p>
+                <p class="mb-1"><strong>Tienda:</strong> <span id="previewStore"></span></p>
+                <p class="mb-1"><strong>Precio Original:</strong> <span id="previewOriginalPrice" class="text-decoration-line-through text-muted"></span></p>
+                <p class="mb-0"><strong>Precio Oferta:</strong> <span id="previewOfferPrice" class="text-gradient fw-bold fs-5"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Canvas Preview -->
+    <div class="text-center mb-4">
+        <div class="canvas-wrapper d-inline-block" style="box-shadow: 0 0 60px rgba(124, 58, 237, 0.15);">
+            <canvas id="bannerCanvas" width="540" height="540"></canvas>
+        </div>
+    </div>
+
+    <!-- Format Selector -->
+    <h6 class="text-muted text-uppercase fw-bold mb-3">
+        <i class="bi bi-aspect-ratio me-1"></i>Formato de Descarga
+    </h6>
+    <div class="format-selector">
+        <div class="format-option active" data-ratio="1:1" data-w="1080" data-h="1080" onclick="selectFormat(this)">
+            <div class="ratio">1:1</div>
+            <div class="dims">1080×1080</div>
+        </div>
+        <div class="format-option" data-ratio="1.91:1" data-w="1080" data-h="566" onclick="selectFormat(this)">
+            <div class="ratio">1.91:1</div>
+            <div class="dims">1080×566</div>
+        </div>
+        <div class="format-option" data-ratio="4:5" data-w="1080" data-h="1350" onclick="selectFormat(this)">
+            <div class="ratio">4:5</div>
+            <div class="dims">1080×1350</div>
+        </div>
+    </div>
+
+    <!-- Download Buttons -->
+    <div class="d-flex gap-3 mt-4 justify-content-center">
+        <button class="btn-gradient" onclick="downloadBanner('png')">
+            <i class="bi bi-download me-1"></i>Descargar PNG
+        </button>
+        <button class="btn-outline-light-custom" onclick="downloadBanner('jpeg')">
+            <i class="bi bi-file-image me-1"></i>Descargar JPG
+        </button>
+        <a href="{% url 'banners:editor-edit' template.id %}" class="btn-outline-light-custom">
+            <i class="bi bi-pencil me-1"></i>Editar Plantilla
+        </a>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay" style="display: none;">
+    <div class="spinner-glow"></div>
+    <p class="text-muted">Extrayendo datos del producto...</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+<script id="templateInitData" type="application/json">{{ template_json|safe }}</script>
+<script>
+const CANVAS_DISPLAY = 540;
+const CANVAS_REAL = 1080;
+const SCALE = CANVAS_REAL / CANVAS_DISPLAY;
+
+const canvas = new fabric.Canvas('bannerCanvas', {
+    width: CANVAS_DISPLAY,
+    height: CANVAS_DISPLAY,
+    backgroundColor: '#1a1a2e',
+    preserveObjectStacking: true,
+});
+
+let currentFormat = { w: 1080, h: 1080 };
+
+// Load template
+const templateData = JSON.parse(document.getElementById('templateInitData').textContent);
+if (templateData && Object.keys(templateData).length > 0) {
+    canvas.loadFromJSON(templateData, () => {
+        canvas.renderAll();
+    });
+}
+
+// ===== Scrape Product =====
+async function scrapeProduct() {
+    const url = document.getElementById('productUrl').value.trim();
+    if (!url) {
+        alert('Ingresa un link de producto');
+        return;
+    }
+
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    document.getElementById('scrapeBtn').disabled = true;
+
+    try {
+        const resp = await fetch('/api/scrape/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({ url: url }),
+        });
+
+        const data = await resp.json();
+
+        if (resp.ok) {
+            showDataPreview(data);
+            injectDataIntoCanvas(data);
+        } else {
+            alert('Error: ' + (data.error || 'No se pudo extraer los datos'));
+        }
+    } catch (err) {
+        alert('Error de conexión: ' + err.message);
+    } finally {
+        document.getElementById('loadingOverlay').style.display = 'none';
+        document.getElementById('scrapeBtn').disabled = false;
+    }
+}
+
+function showDataPreview(data) {
+    document.getElementById('dataPreview').style.display = 'block';
+    document.getElementById('previewImg').src = data.image_url || '';
+    document.getElementById('previewTitle').textContent = data.title || '-';
+    document.getElementById('previewStore').textContent = data.store_name || '-';
+    document.getElementById('previewOriginalPrice').textContent = data.original_price ? formatPrice(data.original_price) : '-';
+    document.getElementById('previewOfferPrice').textContent = data.offer_price ? formatPrice(data.offer_price) : '-';
+}
+
+function formatPrice(price) {
+    if (typeof price === 'number') {
+        return '$' + price.toLocaleString('es-CL');
+    }
+    return price;
+}
+
+// ===== Inject Data into Canvas =====
+function injectDataIntoCanvas(data) {
+    const objects = canvas.getObjects();
+
+    objects.forEach(obj => {
+        const dt = obj.dataType || (obj._objects && obj._objects[0] && obj._objects[0].dataType);
+
+        switch (dt) {
+            case 'title':
+                if (obj.type === 'i-text' || obj.type === 'text') {
+                    obj.set('text', truncateText(data.title || 'Producto', 60));
+                }
+                break;
+            case 'original_price':
+                if (obj.type === 'i-text' || obj.type === 'text') {
+                    obj.set('text', data.original_price ? formatPrice(data.original_price) : '');
+                    if (data.original_price !== data.offer_price) {
+                        obj.set('linethrough', true);
+                    }
+                }
+                break;
+            case 'offer_price':
+                if (obj.type === 'i-text' || obj.type === 'text') {
+                    obj.set('text', data.offer_price ? formatPrice(data.offer_price) : '');
+                }
+                break;
+            case 'store_name':
+                if (obj.type === 'i-text' || obj.type === 'text') {
+                    obj.set('text', data.store_name || 'Tienda');
+                }
+                break;
+            case 'product_image':
+                if (data.image_url) {
+                    loadProductImage(data.image_url, obj);
+                }
+                break;
+        }
+    });
+
+    canvas.renderAll();
+}
+
+function loadProductImage(imageUrl, placeholder) {
+    // Use a CORS proxy approach - load via img tag
+    fabric.Image.fromURL(imageUrl, (img) => {
+        if (!img) return;
+
+        const bounds = placeholder.getBoundingRect();
+        const scaleX = placeholder.width * placeholder.scaleX / img.width;
+        const scaleY = placeholder.height * placeholder.scaleY / img.height;
+        const scale = Math.min(scaleX, scaleY);
+
+        img.set({
+            left: placeholder.left,
+            top: placeholder.top,
+            scaleX: scale,
+            scaleY: scale,
+            dataType: 'product_image',
+        });
+
+        canvas.remove(placeholder);
+        canvas.add(img);
+        canvas.renderAll();
+    }, { crossOrigin: 'anonymous' });
+}
+
+function truncateText(text, maxLen) {
+    if (text.length <= maxLen) return text;
+    return text.substring(0, maxLen) + '...';
+}
+
+// ===== Format Selector =====
+function selectFormat(el) {
+    document.querySelectorAll('.format-option').forEach(o => o.classList.remove('active'));
+    el.classList.add('active');
+    currentFormat.w = parseInt(el.dataset.w);
+    currentFormat.h = parseInt(el.dataset.h);
+
+    // Resize canvas display
+    const displayH = CANVAS_DISPLAY * (currentFormat.h / currentFormat.w);
+    canvas.setHeight(displayH);
+    canvas.setWidth(CANVAS_DISPLAY);
+    canvas.renderAll();
+}
+
+// ===== Download =====
+function downloadBanner(format) {
+    const multiplier = currentFormat.w / CANVAS_DISPLAY;
+
+    const dataURL = canvas.toDataURL({
+        format: format,
+        quality: format === 'jpeg' ? 0.95 : 1,
+        multiplier: multiplier,
+    });
+
+    const link = document.createElement('a');
+    link.download = `banner_${currentFormat.w}x${currentFormat.h}.${format === 'jpeg' ? 'jpg' : 'png'}`;
+    link.href = dataURL;
+    link.click();
+}
+
+// ===== Utils =====
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Allow Enter key to trigger scrape
+document.getElementById('productUrl').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') scrapeProduct();
+});
+</script>
+{% endblock %}

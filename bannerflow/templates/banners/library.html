@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Biblioteca — BannerFlow{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold"><i class="bi bi-grid-fill text-gradient me-2"></i>Biblioteca de Plantillas</h2>
+        <a href="{% url 'banners:editor' %}" class="btn-gradient btn-sm">
+            <i class="bi bi-plus-circle me-1"></i>Nueva Plantilla
+        </a>
+    </div>
+
+    {% if predefined %}
+    <h5 class="fw-bold mb-3 text-secondary">
+        <i class="bi bi-stars me-1"></i>Plantillas Predefinidas
+    </h5>
+    <div class="row g-4 mb-5">
+        {% for tpl in predefined %}
+        <div class="col-6 col-md-3">
+            <div class="template-card">
+                <div class="preview">
+                    <img id="preview-{{ tpl.id }}" alt="{{ tpl.name }}">
+                </div>
+                <div class="info">
+                    <span class="name">{{ tpl.name }}</span>
+                    <div class="actions">
+                        <a href="{% url 'banners:generate' tpl.id %}" class="btn btn-sm btn-outline-light" title="Usar">
+                            <i class="bi bi-play-fill"></i>
+                        </a>
+                        <a href="{% url 'banners:editor-edit' tpl.id %}" class="btn btn-sm btn-outline-light" title="Duplicar y editar">
+                            <i class="bi bi-copy"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <h5 class="fw-bold mb-3 text-secondary">
+        <i class="bi bi-person-fill me-1"></i>Mis Plantillas
+    </h5>
+    {% if custom %}
+    <div class="row g-4">
+        {% for tpl in custom %}
+        <div class="col-6 col-md-3">
+            <div class="template-card">
+                <div class="preview">
+                    <img id="preview-{{ tpl.id }}" alt="{{ tpl.name }}">
+                </div>
+                <div class="info">
+                    <span class="name">{{ tpl.name }}</span>
+                    <div class="actions">
+                        <a href="{% url 'banners:generate' tpl.id %}" class="btn btn-sm btn-outline-light" title="Usar">
+                            <i class="bi bi-play-fill"></i>
+                        </a>
+                        <a href="{% url 'banners:editor-edit' tpl.id %}" class="btn btn-sm btn-outline-light" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <button class="btn btn-sm btn-outline-danger delete-template" data-id="{{ tpl.id }}" title="Eliminar">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
+        <p class="text-muted mt-3">No tienes plantillas aún. ¡Crea tu primera!</p>
+        <a href="{% url 'banners:editor' %}" class="btn-gradient mt-2">Crear Plantilla</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+<script id="allTemplatesData" type="application/json">{{ all_templates_json|safe }}</script>
+<script>
+const allTemplates = JSON.parse(document.getElementById('allTemplatesData').textContent);
+
+document.addEventListener('DOMContentLoaded', () => {
+    Object.keys(allTemplates).forEach(id => {
+        renderPreview(id, allTemplates[id]);
+    });
+});
+
+function renderPreview(id, data) {
+    if (!data || !data.objects) return;
+    const img = document.getElementById('preview-' + id);
+    if (!img) return;
+
+    const fc = new fabric.StaticCanvas(null, {
+        width: 540,
+        height: 540,
+        enableRetinaScaling: false,
+    });
+
+    fc.loadFromJSON(data, () => {
+        fc.renderAll();
+        img.src = fc.toDataURL({ format: 'png', multiplier: 0.5 });
+        fc.dispose();
+    });
+}
+
+document.querySelectorAll('.delete-template').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (!confirm('¿Eliminar esta plantilla?')) return;
+        const id = btn.dataset.id;
+        const resp = await fetch(`/api/templates/${id}/`, { method: 'DELETE' });
+        if (resp.ok) { btn.closest('.col-6').remove(); }
+    });
+});
+</script>
+{% endblock %}

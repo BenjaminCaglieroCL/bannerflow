@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}BannerFlow — Crea Banners para Instagram{% endblock %}
+
+{% block content %}
+<section class="hero-section">
+    <div class="container">
+        <h1>Crea <span class="text-gradient">Banners Increíbles</span><br>para Instagram</h1>
+        <p>Pega el link de un producto, elige una plantilla y descarga tu banner listo para publicar. MercadoLibre, Amazon, Sodimac y más.</p>
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <a href="{% url 'banners:editor' %}" class="btn-gradient">
+                <i class="bi bi-plus-circle me-2"></i>Crear Plantilla
+            </a>
+            <a href="{% url 'banners:library' %}" class="btn-outline-light-custom">
+                <i class="bi bi-grid me-2"></i>Ver Biblioteca
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="container mb-5">
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card-custom p-4 text-center h-100">
+                <div class="mb-3">
+                    <i class="bi bi-palette-fill text-gradient" style="font-size: 2.5rem;"></i>
+                </div>
+                <h5 class="fw-bold">Diseña tu Plantilla</h5>
+                <p class="card-text">Usa el editor drag & drop para crear plantillas personalizadas con colores, fondos y estilos únicos.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-custom p-4 text-center h-100">
+                <div class="mb-3">
+                    <i class="bi bi-link-45deg text-gradient" style="font-size: 2.5rem;"></i>
+                </div>
+                <h5 class="fw-bold">Pega el Link</h5>
+                <p class="card-text">Introduce el link del producto y automáticamente extraemos imagen, título, precio y más.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-custom p-4 text-center h-100">
+                <div class="mb-3">
+                    <i class="bi bi-download text-gradient" style="font-size: 2.5rem;"></i>
+                </div>
+                <h5 class="fw-bold">Descarga y Publica</h5>
+                <p class="card-text">Descarga tu banner en formato Instagram (1:1, 4:5, 1.91:1) listo para publicar.</p>
+            </div>
+        </div>
+    </div>
+
+    {% if templates %}
+    <h3 class="fw-bold mb-4">
+        <i class="bi bi-stars text-gradient me-2"></i>Plantillas Recientes
+    </h3>
+    <div class="row g-4">
+        {% for tpl in templates %}
+        <div class="col-6 col-md-3">
+            <div class="template-card" data-url="{% url 'banners:generate' tpl.id %}" style="cursor:pointer;">
+                <div class="preview">
+                    <img id="preview-{{ tpl.id }}" alt="{{ tpl.name }}">
+                </div>
+                <div class="info">
+                    <span class="name">{{ tpl.name }}</span>
+                    {% if tpl.is_predefined %}
+                        <span class="badge-predefined">PRO</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+<script id="templatesData" type="application/json">{{ templates_json|safe }}</script>
+<script>
+const templateData = JSON.parse(document.getElementById('templatesData').textContent);
+
+document.addEventListener('DOMContentLoaded', () => {
+    Object.keys(templateData).forEach(id => {
+        renderPreview(id, templateData[id]);
+    });
+});
+
+function renderPreview(id, data) {
+    if (!data || !data.objects) return;
+    const img = document.getElementById('preview-' + id);
+    if (!img) return;
+
+    // Render offscreen at full size (same as editor), then export as image
+    const fc = new fabric.StaticCanvas(null, {
+        width: 540,
+        height: 540,
+        enableRetinaScaling: false,
+    });
+
+    fc.loadFromJSON(data, () => {
+        fc.renderAll();
+        img.src = fc.toDataURL({ format: 'png', multiplier: 0.5 });
+        fc.dispose();
+    });
+}
+
+// Navigate on card click
+document.querySelectorAll('.template-card[data-url]').forEach(card => {
+    card.addEventListener('click', () => {
+        window.location = card.dataset.url;
+    });
+});
+</script>
+{% endblock %}

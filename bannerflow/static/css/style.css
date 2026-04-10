@@ -1,0 +1,507 @@
+/* ===== Variables & Theme ===== */
+:root {
+    --bg-dark: #0f0f13;
+    --bg-card: #1a1a24;
+    --bg-surface: #22223a;
+    --accent-1: #7c3aed;
+    --accent-2: #f472b6;
+    --accent-3: #06b6d4;
+    --accent-gradient: linear-gradient(135deg, #7c3aed, #f472b6, #06b6d4);
+    --text-primary: #f1f1f6;
+    --text-secondary: #9ca3af;
+    --border-color: #2d2d44;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    min-height: 100vh;
+}
+
+/* ===== Navbar ===== */
+.bg-dark-custom {
+    background: rgba(15, 15, 19, 0.95) !important;
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.navbar-brand {
+    font-size: 1.4rem;
+    letter-spacing: -0.5px;
+}
+
+.text-gradient {
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.nav-link {
+    color: var(--text-secondary) !important;
+    transition: color 0.2s;
+    font-weight: 500;
+}
+
+.nav-link:hover {
+    color: var(--text-primary) !important;
+}
+
+/* ===== Hero ===== */
+.hero-section {
+    padding: 80px 0 60px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at 30% 50%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 50%, rgba(244, 114, 182, 0.08) 0%, transparent 50%);
+    z-index: 0;
+}
+
+.hero-section > * {
+    position: relative;
+    z-index: 1;
+}
+
+.hero-section h1 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: 3rem;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+}
+
+.hero-section p {
+    color: var(--text-secondary);
+    font-size: 1.15rem;
+    max-width: 600px;
+    margin: 0 auto 2rem;
+}
+
+/* ===== Buttons ===== */
+.btn-gradient {
+    background: var(--accent-gradient);
+    color: white;
+    border: none;
+    padding: 12px 32px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-gradient:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(124, 58, 237, 0.4);
+    color: white;
+}
+
+.btn-outline-light-custom {
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px 32px;
+    border-radius: 50px;
+    font-weight: 500;
+    transition: all 0.3s;
+    background: transparent;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-outline-light-custom:hover {
+    background: var(--bg-surface);
+    border-color: var(--accent-1);
+    color: white;
+}
+
+/* ===== Cards ===== */
+.card-custom {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.card-custom:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
+    border-color: var(--accent-1);
+}
+
+.card-custom .card-img-top {
+    height: 200px;
+    object-fit: cover;
+    background: var(--bg-surface);
+}
+
+.card-custom .card-body {
+    padding: 1.25rem;
+}
+
+.card-custom .card-title {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.card-custom .card-text {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* ===== Template Preview Card ===== */
+.template-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: all 0.3s;
+    cursor: pointer;
+    position: relative;
+}
+
+.template-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 32px rgba(124, 58, 237, 0.25);
+    border-color: var(--accent-1);
+}
+
+.template-card .preview {
+    aspect-ratio: 1;
+    background: var(--bg-surface);
+    overflow: hidden;
+    position: relative;
+}
+
+/* Fabric.js inserts a .canvas-container wrapper — make it fill the preview */
+.template-card .preview .canvas-container {
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute !important;
+    top: 0; left: 0;
+}
+
+.template-card .preview canvas,
+.template-card .preview img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+    display: block;
+}
+
+.template-card .info {
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.template-card .info .name {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.template-card .actions {
+    display: flex;
+    gap: 4px;
+}
+
+.template-card .actions .btn {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    border-radius: 6px;
+}
+
+.badge-predefined {
+    background: var(--accent-gradient);
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+/* ===== Editor Layout ===== */
+.editor-container {
+    display: grid;
+    grid-template-columns: 280px 1fr 280px;
+    height: calc(100vh - 56px);
+    overflow: hidden;
+}
+
+.editor-sidebar {
+    background: var(--bg-card);
+    border-right: 1px solid var(--border-color);
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.editor-sidebar-right {
+    background: var(--bg-card);
+    border-left: 1px solid var(--border-color);
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.editor-canvas-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0a0a0f;
+    overflow: auto;
+    padding: 24px;
+}
+
+.canvas-wrapper {
+    background: white;
+    box-shadow: 0 0 60px rgba(124, 58, 237, 0.15);
+    border-radius: 4px;
+}
+
+/* ===== Sidebar Sections ===== */
+.sidebar-section {
+    margin-bottom: 20px;
+}
+
+.sidebar-section h6 {
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.tool-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 6px;
+}
+
+.tool-btn:hover {
+    background: var(--accent-1);
+    border-color: var(--accent-1);
+}
+
+.tool-btn i {
+    font-size: 1.1rem;
+}
+
+/* ===== Property Panel ===== */
+.prop-group {
+    margin-bottom: 16px;
+}
+
+.prop-group label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.prop-group input,
+.prop-group select {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.prop-group input:focus,
+.prop-group select:focus {
+    outline: none;
+    border-color: var(--accent-1);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+}
+
+.prop-group input[type="color"] {
+    height: 36px;
+    padding: 4px;
+    cursor: pointer;
+}
+
+.prop-group input[type="range"] {
+    -webkit-appearance: none;
+    height: 6px;
+    background: var(--bg-surface);
+    border-radius: 3px;
+    border: none;
+    padding: 0;
+}
+
+.prop-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--accent-1);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* ===== Generate Page ===== */
+.generate-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.url-input-group {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 32px;
+}
+
+.url-input-group input {
+    flex: 1;
+    padding: 14px 20px;
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.url-input-group input:focus {
+    outline: none;
+    border-color: var(--accent-1);
+}
+
+.url-input-group input::placeholder {
+    color: var(--text-secondary);
+}
+
+.format-selector {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.format-option {
+    flex: 1;
+    padding: 12px;
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.format-option:hover,
+.format-option.active {
+    border-color: var(--accent-1);
+    background: rgba(124, 58, 237, 0.1);
+}
+
+.format-option .ratio {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.format-option .dims {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* ===== Loading Spinner ===== */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 15, 19, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    gap: 16px;
+}
+
+.spinner-glow {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--accent-1);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ===== Footer ===== */
+.footer-custom {
+    background: var(--bg-card);
+    border-top: 1px solid var(--border-color);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 992px) {
+    .editor-container {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+    .editor-sidebar,
+    .editor-sidebar-right {
+        border: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .hero-section h1 {
+        font-size: 2rem;
+    }
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-1);
+}
