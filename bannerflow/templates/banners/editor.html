@@ -65,6 +65,19 @@
                     <i class="bi bi-palette"></i> Aplicar Gradiente
                 </button>
             </div>
+            <div class="prop-group">
+                <label>Imagen de Fondo</label>
+                <div class="bg-image-preview" id="bgImagePreview">
+                    <i class="bi bi-image"></i>&nbsp;Sin imagen
+                </div>
+                <button class="tool-btn bg-upload-btn">
+                    <i class="bi bi-upload"></i> Subir Imagen
+                    <input type="file" accept="image/*" onchange="setBackgroundImage(this)">
+                </button>
+                <button class="tool-btn mt-1" onclick="removeBackgroundImage()" style="border-color: #ef4444;">
+                    <i class="bi bi-x-circle" style="color: #ef4444;"></i> Quitar Imagen
+                </button>
+            </div>
         </div>
 
         <div class="sidebar-section">
@@ -83,8 +96,24 @@
 
     <!-- CENTER: Canvas -->
     <div class="editor-canvas-area">
-        <div class="canvas-wrapper">
-            <canvas id="bannerCanvas" width="540" height="540"></canvas>
+        <div class="format-tabs-bar">
+            <button class="format-tab active" data-format="1:1" onclick="switchFormat('1:1')">
+                <i class="bi bi-square"></i> 1:1 <small>1080×1080</small>
+            </button>
+            <button class="format-tab" data-format="1.91:1" onclick="switchFormat('1.91:1')">
+                <i class="bi bi-aspect-ratio"></i> 1.91:1 <small>1080×566</small>
+            </button>
+            <button class="format-tab" data-format="4:5" onclick="switchFormat('4:5')">
+                <i class="bi bi-tablet"></i> 4:5 <small>1080×1350</small>
+            </button>
+            <button class="format-tab" data-format="9:16" onclick="switchFormat('9:16')">
+                <i class="bi bi-phone"></i> 9:16 <small>1080×1920</small>
+            </button>
+        </div>
+        <div class="canvas-scroll-area">
+            <div class="canvas-wrapper">
+                <canvas id="bannerCanvas" width="540" height="540"></canvas>
+            </div>
         </div>
     </div>
 
@@ -162,17 +191,64 @@
 <script id="templateInitData" type="application/json">{{ template_json|safe }}</script>
 {% endif %}
 <script>
-// ===== Canvas Init =====
-const CANVAS_DISPLAY = 540;
-const CANVAS_REAL = 1080;
-const SCALE = CANVAS_REAL / CANVAS_DISPLAY;
+// ===== Format Configuration =====
+const FORMATS = {
+    '1:1':    { w: 1080, h: 1080, label: 'Cuadrado' },
+    '1.91:1': { w: 1080, h: 566,  label: 'Horizontal' },
+    '4:5':    { w: 1080, h: 1350, label: 'Vertical' },
+    '9:16':   { w: 1080, h: 1920, label: 'Historia' },
+};
 
+const DISPLAY_WIDTH = 540;
+const SCALE = 2; // 1080 / 540
+
+let currentFormat = '1:1';
+let allFormatsData = { '1:1': null, '1.91:1': null, '4:5': null, '9:16': null };
+
+// ===== Canvas Init =====
 const canvas = new fabric.Canvas('bannerCanvas', {
-    width: CANVAS_DISPLAY,
-    height: CANVAS_DISPLAY,
+    width: DISPLAY_WIDTH,
+    height: DISPLAY_WIDTH,
     backgroundColor: '#1a1a2e',
     preserveObjectStacking: true,
 });
+
+function getDisplayHeight(format) {
+    const f = FORMATS[format];
+    return Math.round(DISPLAY_WIDTH * (f.h / f.w));
+}
+
+// ===== Format Switching =====
+function switchFormat(format) {
+    if (format === currentFormat) return;
+
+    // Save current format state
+    allFormatsData[currentFormat] = canvas.toJSON(['dataType']);
+
+    // If target format has no data yet, copy from current
+    if (!allFormatsData[format]) {
+        allFormatsData[format] = JSON.parse(JSON.stringify(allFormatsData[currentFormat]));
+    }
+
+    // Update active tab
+    document.querySelectorAll('.format-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.format-tab[data-format="${format}"]`).classList.add('active');
+
+    const prevFormat = currentFormat;
+    currentFormat = format;
+
+    // Resize canvas
+    const displayH = getDisplayHeight(format);
+    canvas.setDimensions({ width: DISPLAY_WIDTH, height: displayH });
+
+    // Load format data
+    canvas.loadFromJSON(allFormatsData[format], () => {
+        canvas.setDimensions({ width: DISPLAY_WIDTH, height: displayH });
+        canvas.renderAll();
+    });
+
+    showToast(`📐 Formato: ${FORMATS[format].label} (${format})`);
+}
 
 // ===== Add Elements =====
 function addText(text, fontSize, bold, dataType) {
@@ -267,15 +343,40 @@ function setCanvasBg(color) {
 function setCanvasGradient() {
     const c1 = document.getElementById('gradColor1').value;
     const c2 = document.getElementById('gradColor2').value;
+    const displayH = getDisplayHeight(currentFormat);
     const gradient = new fabric.Gradient({
         type: 'linear',
-        coords: { x1: 0, y1: 0, x2: CANVAS_DISPLAY, y2: CANVAS_DISPLAY },
+        coords: { x1: 0, y1: 0, x2: DISPLAY_WIDTH, y2: displayH },
         colorStops: [
             { offset: 0, color: c1 },
             { offset: 1, color: c2 },
         ]
     });
     canvas.setBackgroundColor(gradient, canvas.renderAll.bind(canvas));
+}
+
+// ===== Background Image =====
+function setBackgroundImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        fabric.Image.fromURL(e.target.result, function(img) {
+            canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
+                scaleX: canvas.width / img.width,
+                scaleY: canvas.height / img.height,
+            });
+            document.getElementById('bgImagePreview').innerHTML = `<img src="${e.target.result}">`;
+            showToast('🖼 Imagen de fondo aplicada');
+        });
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeBackgroundImage() {
+    canvas.setBackgroundImage(null, canvas.renderAll.bind(canvas));
+    document.getElementById('bgImagePreview').innerHTML = '<i class="bi bi-image"></i>&nbsp;Sin imagen';
+    showToast('🗑 Imagen de fondo eliminada');
 }
 
 // ===== Object Actions =====
@@ -348,13 +449,22 @@ async function saveTemplate() {
         return;
     }
 
-    const canvasData = canvas.toJSON(['dataType']);
+    // Save current format state before sending
+    allFormatsData[currentFormat] = canvas.toJSON(['dataType']);
+
+    // Auto-fill empty formats from 1:1 base
+    Object.keys(FORMATS).forEach(f => {
+        if (!allFormatsData[f] && allFormatsData['1:1']) {
+            allFormatsData[f] = JSON.parse(JSON.stringify(allFormatsData['1:1']));
+        }
+    });
+
     const templateIdEl = document.getElementById('templateId');
     const templateId = templateIdEl ? templateIdEl.value : null;
 
     const payload = {
         name: name,
-        canvas_data: canvasData,
+        canvas_data: allFormatsData,
     };
 
     let url = '/api/templates/';
@@ -378,14 +488,13 @@ async function saveTemplate() {
         if (resp.ok) {
             const data = await resp.json();
             if (!templateId) {
-                // Add hidden input so subsequent saves are updates
                 const input = document.createElement('input');
                 input.type = 'hidden';
                 input.id = 'templateId';
                 input.value = data.id;
                 document.body.appendChild(input);
             }
-            showToast('✅ Plantilla guardada correctamente');
+            showToast('✅ Plantilla guardada (todos los formatos)');
         } else {
             showToast('❌ Error al guardar la plantilla');
         }
@@ -394,19 +503,27 @@ async function saveTemplate() {
     }
 }
 
-function loadTemplate(canvasData) {
-    canvas.loadFromJSON(canvasData, () => {
-        canvas.renderAll();
-    });
-}
-
-// ===== Load existing template if editing =====
+// ===== Load existing template =====
 document.addEventListener('DOMContentLoaded', () => {
     const initEl = document.getElementById('templateInitData');
     if (initEl) {
         const data = JSON.parse(initEl.textContent);
         if (data && Object.keys(data).length > 0) {
-            loadTemplate(data);
+            if (data.objects) {
+                // Legacy single-format template — migrate
+                allFormatsData['1:1'] = data;
+            } else {
+                // Multi-format template
+                Object.keys(FORMATS).forEach(f => {
+                    if (data[f]) allFormatsData[f] = data[f];
+                });
+            }
+            // Load 1:1 format
+            if (allFormatsData['1:1']) {
+                canvas.loadFromJSON(allFormatsData['1:1'], () => {
+                    canvas.renderAll();
+                });
+            }
         }
     }
 });

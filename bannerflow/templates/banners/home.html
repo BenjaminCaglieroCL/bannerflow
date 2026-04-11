@@ -45,7 +45,7 @@
                     <i class="bi bi-download text-gradient" style="font-size: 2.5rem;"></i>
                 </div>
                 <h5 class="fw-bold">Descarga y Publica</h5>
-                <p class="card-text">Descarga tu banner en formato Instagram (1:1, 4:5, 1.91:1) listo para publicar.</p>
+                <p class="card-text">Descarga tu banner en formato Instagram (1:1, 4:5, 1.91:1, 9:16 Historias) listo para publicar.</p>
             </div>
         </div>
     </div>
@@ -88,18 +88,25 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function renderPreview(id, data) {
-    if (!data || !data.objects) return;
+    if (!data) return;
+
+    // Handle multi-format data: use 1:1 or first available format
+    let canvasData = data;
+    if (!data.objects) {
+        canvasData = data['1:1'] || data[Object.keys(data)[0]];
+    }
+    if (!canvasData || !canvasData.objects) return;
+
     const img = document.getElementById('preview-' + id);
     if (!img) return;
 
-    // Render offscreen at full size (same as editor), then export as image
     const fc = new fabric.StaticCanvas(null, {
         width: 540,
         height: 540,
         enableRetinaScaling: false,
     });
 
-    fc.loadFromJSON(data, () => {
+    fc.loadFromJSON(canvasData, () => {
         fc.renderAll();
         img.src = fc.toDataURL({ format: 'png', multiplier: 0.5 });
         fc.dispose();

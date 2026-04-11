@@ -62,6 +62,10 @@
             <div class="ratio">4:5</div>
             <div class="dims">1080×1350</div>
         </div>
+        <div class="format-option" data-ratio="9:16" data-w="1080" data-h="1920" onclick="selectFormat(this)">
+            <div class="ratio">9:16</div>
+            <div class="dims">1080×1920</div>
+        </div>
     </div>
 
     <!-- Download Buttons -->
@@ -90,8 +94,12 @@
 <script id="templateInitData" type="application/json">{{ template_json|safe }}</script>
 <script>
 const CANVAS_DISPLAY = 540;
-const CANVAS_REAL = 1080;
-const SCALE = CANVAS_REAL / CANVAS_DISPLAY;
+const FORMATS = {
+    '1:1':    { w: 1080, h: 1080 },
+    '1.91:1': { w: 1080, h: 566 },
+    '4:5':    { w: 1080, h: 1350 },
+    '9:16':   { w: 1080, h: 1920 },
+};
 
 const canvas = new fabric.Canvas('bannerCanvas', {
     width: CANVAS_DISPLAY,
@@ -101,11 +109,26 @@ const canvas = new fabric.Canvas('bannerCanvas', {
 });
 
 let currentFormat = { w: 1080, h: 1080 };
+let currentRatio = '1:1';
+let allFormatsData = {};
+let lastScrapedData = null;
 
-// Load template
-const templateData = JSON.parse(document.getElementById('templateInitData').textContent);
-if (templateData && Object.keys(templateData).length > 0) {
-    canvas.loadFromJSON(templateData, () => {
+// Parse template data — handle multi-format or legacy
+const rawData = JSON.parse(document.getElementById('templateInitData').textContent);
+if (rawData && Object.keys(rawData).length > 0) {
+    if (rawData.objects) {
+        // Legacy single-format
+        Object.keys(FORMATS).forEach(f => {
+            allFormatsData[f] = JSON.parse(JSON.stringify(rawData));
+        });
+    } else {
+        allFormatsData = rawData;
+    }
+}
+
+// Load initial 1:1 format
+if (allFormatsData['1:1']) {
+    canvas.loadFromJSON(allFormatsData['1:1'], () => {
         canvas.renderAll();
     });
 }
@@ -134,6 +157,7 @@ async function scrapeProduct() {
         const data = await resp.json();
 
         if (resp.ok) {
+            lastScrapedData = data;
             showDataPreview(data);
             injectDataIntoCanvas(data);
         } else {
@@ -206,11 +230,9 @@ function injectDataIntoCanvas(data) {
 }
 
 function loadProductImage(imageUrl, placeholder) {
-    // Use a CORS proxy approach - load via img tag
     fabric.Image.fromURL(imageUrl, (img) => {
         if (!img) return;
 
-        const bounds = placeholder.getBoundingRect();
         const scaleX = placeholder.width * placeholder.scaleX / img.width;
         const scaleY = placeholder.height * placeholder.scaleY / img.height;
         const scale = Math.min(scaleX, scaleY);
@@ -238,14 +260,29 @@ function truncateText(text, maxLen) {
 function selectFormat(el) {
     document.querySelectorAll('.format-option').forEach(o => o.classList.remove('active'));
     el.classList.add('active');
+
+    const ratio = el.dataset.ratio;
     currentFormat.w = parseInt(el.dataset.w);
     currentFormat.h = parseInt(el.dataset.h);
+    currentRatio = ratio;
 
     // Resize canvas display
     const displayH = CANVAS_DISPLAY * (currentFormat.h / currentFormat.w);
-    canvas.setHeight(displayH);
-    canvas.setWidth(CANVAS_DISPLAY);
-    canvas.renderAll();
+    canvas.setDimensions({ width: CANVAS_DISPLAY, height: displayH });
+
+    // Load format-specific layout
+    const formatData = allFormatsData[ratio];
+    if (formatData && Object.keys(formatData).length > 0) {
+        canvas.loadFromJSON(formatData, () => {
+            canvas.setDimensions({ width: CANVAS_DISPLAY, height: displayH });
+            if (lastScrapedData) {
+                injectDataIntoCanvas(lastScrapedData);
+            }
+            canvas.renderAll();
+        });
+    } else {
+        canvas.renderAll();
+    }
 }
 
 // ===== Download =====

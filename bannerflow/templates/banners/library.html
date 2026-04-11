@@ -92,7 +92,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function renderPreview(id, data) {
-    if (!data || !data.objects) return;
+    if (!data) return;
+
+    // Handle multi-format data: use 1:1 or first available format
+    let canvasData = data;
+    if (!data.objects) {
+        canvasData = data['1:1'] || data[Object.keys(data)[0]];
+    }
+    if (!canvasData || !canvasData.objects) return;
+
     const img = document.getElementById('preview-' + id);
     if (!img) return;
 
@@ -102,7 +110,7 @@ function renderPreview(id, data) {
         enableRetinaScaling: false,
     });
 
-    fc.loadFromJSON(data, () => {
+    fc.loadFromJSON(canvasData, () => {
         fc.renderAll();
         img.src = fc.toDataURL({ format: 'png', multiplier: 0.5 });
         fc.dispose();
