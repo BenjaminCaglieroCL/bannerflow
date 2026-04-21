@@ -16,8 +16,30 @@ HEADERS = {
 }
 
 
+_ALLOWED_DOMAINS = (
+    'mercadolibre.',
+    'mercadoli.',
+    'meli.la',
+    'sodimac.',
+    'homecenter.',
+    'falabella.',
+)
+
+
+def _is_allowed_url(url):
+    """Return True only if the URL belongs to a whitelisted e-commerce domain."""
+    try:
+        domain = urlparse(url).netloc.lower()
+    except Exception:
+        return False
+    return any(part in domain for part in _ALLOWED_DOMAINS)
+
+
 def scrape_url(url):
     """Detect store from URL and scrape product data."""
+    if not _is_allowed_url(url):
+        raise ValueError(f"Dominio no permitido: {urlparse(url).netloc}")
+
     domain = urlparse(url).netloc.lower()
 
     if 'mercadolibre' in domain or 'mercadoli' in domain:
@@ -105,6 +127,26 @@ def _extract_json_ld(soup):
     return {}
 
 
+def _fill_prices_from_text(soup, data):
+    """Generic fallback: scan page text for $-prefixed numbers and fill missing prices."""
+    if 'offer_price' not in data and 'original_price' not in data:
+        price_texts = soup.find_all(string=re.compile(r'\$[\d.,]+'))
+        prices = []
+        for pt in price_texts[:6]:
+            val = _clean_price(pt)
+            if val and isinstance(val, int) and val > 0:
+                prices.append(val)
+        prices = sorted(set(prices), reverse=True)
+        if len(prices) >= 2:
+            data.setdefault('original_price', prices[0])
+            data.setdefault('offer_price', prices[1])
+        elif len(prices) == 1:
+            data.setdefault('offer_price', prices[0])
+
+    data.setdefault('original_price', data.get('offer_price'))
+    data.setdefault('offer_price', data.get('original_price'))
+
+
 # --- MercadoLibre ---
 
 def scrape_mercadolibre(url):
@@ -163,7 +205,6 @@ def scrape_mercadolibre(url):
     return data
 
 
-
 # --- MELI (meli.la short links → MercadoLibre) ---
 
 def scrape_meli(url):
@@ -173,6 +214,9 @@ def scrape_meli(url):
         final_url = resp.url
     except Exception:
         final_url = url
+    # Ensure the redirect landed on a trusted MercadoLibre domain
+    if not _is_allowed_url(final_url):
+        raise ValueError(f"Redirección a dominio no permitido: {urlparse(final_url).netloc}")
     return scrape_mercadolibre(final_url)
 
 
@@ -250,28 +294,10 @@ def scrape_sodimac(url):
                 data['original_price'] = _clean_price(original_el.get_text())
             break
 
-    # Generic price fallback: grab all $-prefixed numbers from page
-    if 'offer_price' not in data or 'original_price' not in data:
-        price_texts = soup.find_all(string=re.compile(r'\$[\d.,]+'))
-        prices = []
-        for pt in price_texts[:6]:
-            val = _clean_price(pt)
-            if val and isinstance(val, int) and val > 0:
-                prices.append(val)
-        prices = sorted(set(prices), reverse=True)
-        if len(prices) >= 2:
-            data.setdefault('original_price', prices[0])
-            data.setdefault('offer_price', prices[1])
-        elif len(prices) == 1:
-            data.setdefault('offer_price', prices[0])
-
-    data.setdefault('original_price', data.get('offer_price'))
-    data.setdefault('offer_price', data.get('original_price'))
+    # Generic price fallback and mutual default
+    _fill_prices_from_text(soup, data)
 
     return data
-
-
-# --- Falabella ---
 
 def scrape_falabella(url):
     """Scrape a Falabella product page (falabella.com)."""
@@ -392,23 +418,8 @@ def scrape_falabella(url):
         elif len(prices) == 1:
             data.setdefault('offer_price', prices[0])
 
-    # Generic price fallback
-    if 'offer_price' not in data or 'original_price' not in data:
-        price_texts = soup.find_all(string=re.compile(r'\$[\d.,]+'))
-        prices = []
-        for pt in price_texts[:6]:
-            val = _clean_price(pt)
-            if val and isinstance(val, int) and val > 0:
-                prices.append(val)
-        prices = sorted(set(prices), reverse=True)
-        if len(prices) >= 2:
-            data.setdefault('original_price', prices[0])
-            data.setdefault('offer_price', prices[1])
-        elif len(prices) == 1:
-            data.setdefault('offer_price', prices[0])
-
-    data.setdefault('original_price', data.get('offer_price'))
-    data.setdefault('offer_price', data.get('original_price'))
+    # Generic price fallback and mutual default
+    _fill_prices_from_text(soup, data)
 
     return data
 
