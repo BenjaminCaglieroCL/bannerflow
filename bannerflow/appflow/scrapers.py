@@ -1,3 +1,4 @@
+import json
 import re
 from urllib.parse import urlparse
 import requests
@@ -19,14 +20,21 @@ def scrape_url(url):
     """Detect store from URL and scrape product data."""
     domain = urlparse(url).netloc.lower()
 
+    # meli.la is a MercadoLibre short-link — follow the redirect first
+    if 'meli.la' in domain:
+        try:
+            resp = requests.head(url, headers=HEADERS, timeout=10, allow_redirects=True)
+            url = resp.url
+        except Exception:
+            pass
+        return scrape_mercadolibre(url)
+
     if 'mercadolibre' in domain or 'mercadoli' in domain:
         return scrape_mercadolibre(url)
-    elif 'amazon' in domain:
-        return scrape_amazon(url)
+    elif 'falabella' in domain:
+        return scrape_falabella(url)
     elif 'sodimac' in domain or 'homecenter' in domain:
         return scrape_sodimac(url)
-    elif 'lider' in domain or 'walmart' in domain:
-        return scrape_lider(url)
     else:
         return scrape_generic(url)
 
@@ -84,6 +92,22 @@ def _extract_og(soup):
     return data
 
 
+def _extract_jsonld(soup):
+    """Extract JSON-LD Product structured data from the page (most reliable source)."""
+    for script in soup.find_all('script', type='application/ld+json'):
+        try:
+            payload = json.loads(script.string or '')
+            if isinstance(payload, list):
+                for item in payload:
+                    if isinstance(item, dict) and item.get('@type') == 'Product':
+                        return item
+            elif isinstance(payload, dict) and payload.get('@type') == 'Product':
+                return payload
+        except (json.JSONDecodeError, AttributeError):
+            continue
+    return None
+
+
 # --- MercadoLibre ---
 
 def scrape_mercadolibre(url):
@@ -138,6 +162,169 @@ def scrape_mercadolibre(url):
         og = _extract_og(soup)
         data['title'] = data.get('title') or og.get('title', '')
         data['image_url'] = data.get('image_url') or og.get('image_url', '')
+
+    return data
+
+
+
+# --- Sodimac ---
+
+def scrape_sodimac(url):
+    soup = _get_soup_playwright(url, wait_selector='h1', timeout=15000)
+    data = {
+        'store_name': 'Sodimac',
+        'store_logo': 'sodimac',
+        'source_url': url,
+    }
+
+    # 1. JSON-LD structured data (most reliable)
+    jsonld = _extract_jsonld(soup)
+    if jsonld:
+        data['title'] = jsonld.get('name', '')
+        images = jsonld.get('image', [])
+        data['image_url'] = (images[0] if isinstance(images, list) else images) or ''
+        offers = jsonld.get('offers', {})
+        if isinstance(offers, list):
+            offers = offers[0] if offers else {}
+        price = offers.get('price') or offers.get('lowPrice')
+        if price:
+            data['offer_price'] = _clean_price(str(price))
+
+    # 2. Title fallback
+    if not data.get('title'):
+        h1 = soup.find('h1')
+        data['title'] = h1.get_text(strip=True) if h1 else ''
+
+    # 3. Offer price — Sodimac event/internet price
+    if not data.get('offer_price'):
+        for attrs in [
+            {'class': re.compile(r'event[-_]?price|offer[-_]?price|precio[-_]?oferta', re.I)},
+            {'data-testid': re.compile(r'price', re.I)},
+            {'class': re.compile(r'primary[-_]?price|main[-_]?price', re.I)},
+        ]:
+            el = soup.find(attrs=attrs)
+            if el:
+                val = _clean_price(el.get_text(strip=True))
+                if val:
+                    data['offer_price'] = val
+                    break
+
+    # 4. Original / normal price (tachado)
+    if not data.get('original_price'):
+        for tag in ['s', 'del']:
+            el = soup.find(tag)
+            if el:
+                val = _clean_price(el.get_text(strip=True))
+                if val and val != data.get('offer_price'):
+                    data['original_price'] = val
+                    break
+        if not data.get('original_price'):
+            for attrs in [
+                {'class': re.compile(r'normal[-_]?price|original[-_]?price|regular[-_]?price', re.I)},
+            ]:
+                el = soup.find(attrs=attrs)
+                if el:
+                    val = _clean_price(el.get_text(strip=True))
+                    if val:
+                        data['original_price'] = val
+                        break
+
+    # Price fallbacks
+    if not data.get('original_price'):
+        data['original_price'] = data.get('offer_price')
+    if not data.get('offer_price'):
+        data['offer_price'] = data.get('original_price')
+
+    # 5. Image fallback
+    if not data.get('image_url'):
+        og = _extract_og(soup)
+        data['image_url'] = og.get('image_url', '')
+
+    return data
+
+
+# --- Falabella ---
+
+def scrape_falabella(url):
+    soup = _get_soup_playwright(url, wait_selector='h1', timeout=15000)
+    data = {
+        'store_name': 'Falabella',
+        'store_logo': 'falabella',
+        'source_url': url,
+    }
+
+    # 1. JSON-LD structured data
+    jsonld = _extract_jsonld(soup)
+    if jsonld:
+        data['title'] = jsonld.get('name', '')
+        images = jsonld.get('image', [])
+        data['image_url'] = (images[0] if isinstance(images, list) else images) or ''
+        offers = jsonld.get('offers', {})
+        if isinstance(offers, list):
+            offers = offers[0] if offers else {}
+        price = offers.get('price') or offers.get('lowPrice')
+        if price:
+            data['offer_price'] = _clean_price(str(price))
+
+    # 2. Title fallback
+    if not data.get('title'):
+        h1 = soup.find('h1')
+        data['title'] = h1.get_text(strip=True) if h1 else ''
+
+    # 3. Falabella price section — prices are labeled "Precio Internet", "Precio Normal", etc.
+    price_section = (
+        soup.find(attrs={'class': re.compile(r'product-price|fb-price|prices-0', re.I)}) or
+        soup.find(attrs={'data-testid': re.compile(r'price', re.I)})
+    )
+    if price_section:
+        items = price_section.find_all('li') or [price_section]
+        for item in items:
+            label_text = item.get_text(' ', strip=True).lower()
+            val = None
+            for span in item.find_all('span', class_=re.compile(r'price|amount|copy', re.I)):
+                v = _clean_price(span.get_text(strip=True))
+                if v:
+                    val = v
+                    break
+            if not val:
+                val = _clean_price(item.get_text(strip=True))
+            if val:
+                if any(k in label_text for k in ('internet', 'oferta', 'cmr')):
+                    if not data.get('offer_price'):
+                        data['offer_price'] = val
+                elif 'normal' in label_text and not data.get('original_price'):
+                    data['original_price'] = val
+
+    # 4. Generic price fallback
+    if not data.get('offer_price'):
+        for attrs in [
+            {'class': re.compile(r'price', re.I)},
+            {'data-internet-price': True},
+        ]:
+            el = soup.find(attrs=attrs)
+            if el:
+                val = _clean_price(el.get_text(strip=True))
+                if val:
+                    data['offer_price'] = val
+                    break
+
+    # Price fallbacks
+    if not data.get('original_price'):
+        data['original_price'] = data.get('offer_price')
+    if not data.get('offer_price'):
+        data['offer_price'] = data.get('original_price')
+
+    # 5. Image fallback
+    if not data.get('image_url'):
+        img = (
+            soup.find('img', attrs={'id': re.compile(r'product', re.I)}) or
+            soup.find('img', attrs={'class': re.compile(r'product.*image|gallery.*image', re.I)})
+        )
+        if img:
+            data['image_url'] = img.get('src', '') or img.get('data-src', '')
+        else:
+            og = _extract_og(soup)
+            data['image_url'] = og.get('image_url', '')
 
     return data
 
