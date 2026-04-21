@@ -209,11 +209,8 @@ def scrape_mercadolibre(url):
 
 def scrape_meli(url):
     """Resolve a meli.la short-link redirect and scrape it as MercadoLibre."""
-    try:
-        resp = requests.get(url, headers=HEADERS, timeout=15, allow_redirects=True)
-        final_url = resp.url
-    except Exception:
-        final_url = url
+    resp = requests.get(url, headers=HEADERS, timeout=15, allow_redirects=True)
+    final_url = resp.url
     # Ensure the redirect landed on a trusted MercadoLibre domain
     if not _is_allowed_url(final_url):
         raise ValueError(f"Redirección a dominio no permitido: {urlparse(final_url).netloc}")
@@ -268,36 +265,33 @@ def scrape_sodimac(url):
     if 'offer_price' not in data:
         # Sodimac "precio oferta" is usually inside an element with class containing
         # "priceBox", "price-offer", "special-price", or data-id="offerPrice"
-        for selector_pair in [
-            (r'oferta|offer|special|promo', r'normal|original|before|tachado'),
-        ]:
-            offer_pat, original_pat = selector_pair
-            offer_el = soup.find(
-                class_=re.compile(offer_pat, re.I),
-                string=re.compile(r'\d')
-            )
-            if not offer_el:
-                # Try a container that holds price text
-                offer_el = soup.find(attrs={'data-id': re.compile(r'offer|sale', re.I)})
-            if offer_el:
-                data['offer_price'] = _clean_price(offer_el.get_text())
+        offer_el = soup.find(
+            class_=re.compile(r'oferta|offer|special|promo', re.I),
+            string=re.compile(r'\d')
+        )
+        if not offer_el:
+            offer_el = soup.find(attrs={'data-id': re.compile(r'offer|sale', re.I)})
+        if offer_el:
+            data['offer_price'] = _clean_price(offer_el.get_text())
 
+        original_el = soup.find(
+            class_=re.compile(r'normal|original|before|tachado', re.I),
+            string=re.compile(r'\d')
+        )
+        if not original_el:
             original_el = soup.find(
-                class_=re.compile(original_pat, re.I),
-                string=re.compile(r'\d')
+                attrs={'data-id': re.compile(r'normal|original', re.I)}
             )
-            if not original_el:
-                original_el = soup.find(
-                    attrs={'data-id': re.compile(r'normal|original', re.I)}
-                )
-            if original_el:
-                data['original_price'] = _clean_price(original_el.get_text())
-            break
+        if original_el:
+            data['original_price'] = _clean_price(original_el.get_text())
 
     # Generic price fallback and mutual default
     _fill_prices_from_text(soup, data)
 
     return data
+
+
+# --- Falabella ---
 
 def scrape_falabella(url):
     """Scrape a Falabella product page (falabella.com)."""
