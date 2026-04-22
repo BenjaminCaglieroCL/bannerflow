@@ -9,7 +9,7 @@
         <h2 class="fw-bold">
             <i class="bi bi-magic text-gradient me-2"></i>Generar Banner
         </h2>
-        <p class="text-muted">Plantilla: <strong>{{ template.name }}</strong></p>
+        <p>Plantilla: <strong>{{ template.name }}</strong></p>
     </div>
 
     <!-- URL Input -->
@@ -22,7 +22,7 @@
 
     <!-- Extracted Data Preview -->
     <div id="dataPreview" class="card-custom p-4 mb-4" style="display: none;">
-        <h6 class="text-muted text-uppercase fw-bold mb-3">
+        <h6 class="text-uppercase fw-bold mb-3">
             <i class="bi bi-check-circle-fill text-success me-1"></i>Datos Extraídos
         </h6>
         <div class="row align-items-center">
@@ -32,7 +32,7 @@
             <div class="col-md-9">
                 <p class="mb-1"><strong>Título:</strong> <span id="previewTitle"></span></p>
                 <p class="mb-1"><strong>Tienda:</strong> <span id="previewStore"></span></p>
-                <p class="mb-1"><strong>Precio Original:</strong> <span id="previewOriginalPrice" class="text-decoration-line-through text-muted"></span></p>
+                <p class="mb-1"><strong>Precio Original:</strong> <span id="previewOriginalPrice" class="text-decoration-line-through"></span></p>
                 <p class="mb-0"><strong>Precio Oferta:</strong> <span id="previewOfferPrice" class="text-gradient fw-bold fs-5"></span></p>
             </div>
         </div>
@@ -46,7 +46,7 @@
     </div>
 
     <!-- Format Selector -->
-    <h6 class="text-muted text-uppercase fw-bold mb-3">
+    <h6 class="text-uppercase fw-bold mb-3">
         <i class="bi bi-aspect-ratio me-1"></i>Formato de Descarga
     </h6>
     <div class="format-selector">
@@ -85,7 +85,7 @@
 <!-- Loading Overlay -->
 <div class="loading-overlay" id="loadingOverlay" style="display: none;">
     <div class="spinner-glow"></div>
-    <p class="text-muted">Extrayendo datos del producto...</p>
+    <p>Extrayendo datos del producto...</p>
 </div>
 {% endblock %}
 

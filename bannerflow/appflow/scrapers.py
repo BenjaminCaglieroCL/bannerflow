@@ -65,16 +65,40 @@ def _get_soup_playwright(url, wait_selector='h1', timeout=15000):
 
 
 def _clean_price(text):
-    """Extract numeric price from text like '$29.990' or 'CLP 29990'."""
+    """Extract numeric CLP price (Chilean format: dots as thousands separators)."""
     if not text:
         return None
-    numbers = re.findall(r'[\d.,]+', text.replace('.', '').replace(',', '.'))
-    if numbers:
+    text = str(text).strip()
+    # Handle float strings from JSON-LD (e.g. '23409.0')
+    try:
+        f = float(text)
+        if f == int(f):
+            return int(f)
+    except (ValueError, TypeError):
+        pass
+    # Chilean prices use dots as thousands separators — strip them
+    m = re.search(r'[\d]+(?:\.[\d]+)*', text)
+    if m:
         try:
-            return int(float(numbers[0]))
+            return int(m.group(0).replace('.', ''))
         except ValueError:
             pass
-    return text.strip()
+    return None
+
+
+def _max_price_in_section(el):
+    """Extract the largest Chilean $-prefixed price from a BS4 element."""
+    if not el:
+        return None
+    text = el.get_text(' ', strip=True)
+    prices = []
+    for m in re.finditer(r'\$\s*([\d][\d.]*)', text):
+        raw = m.group(1).replace('.', '')
+        try:
+            prices.append(int(raw))
+        except ValueError:
+            pass
+    return max(prices) if prices else None
 
 
 def _extract_og(soup):
@@ -132,12 +156,12 @@ def scrape_mercadolibre(url):
     data['image_url'] = src
 
     # 3 & 4. Prices
-    # Original price: the fraction inside the strikethrough <s> element
+    # Original price: <s> element with 'ui-pdp-price__original-value' class
     original_el = soup.find('s', class_=re.compile(r'ui-pdp-price__original-value'))
     if original_el:
         frac = original_el.find('span', class_='andes-money-amount__fraction')
-        if frac:
-            data['original_price'] = _clean_price(frac.get_text())
+        raw = frac.get_text(strip=True) if frac else original_el.get_text(strip=True)
+        data['original_price'] = _clean_price(raw)
 
     # Offer price: first andes-money-amount__fraction NOT inside an <s> ancestor
     for frac in soup.find_all('span', class_='andes-money-amount__fraction'):
@@ -170,19 +194,38 @@ def scrape_mercadolibre(url):
 # --- Sodimac ---
 
 def scrape_sodimac(url):
-    soup = _get_soup_playwright(url, wait_selector='h1', timeout=15000)
+    soup = _get_soup_playwright(url, wait_selector='[class*="prices-0"]', timeout=15000)
     data = {
         'store_name': 'Sodimac',
         'store_logo': 'sodimac',
         'source_url': url,
     }
 
-    # 1. JSON-LD structured data (most reliable)
+    # 1. Title
+    h1 = soup.find('h1')
+    data['title'] = h1.get_text(strip=True) if h1 else ''
+
+    # 2. Image — JSON-LD first, then OG
     jsonld = _extract_jsonld(soup)
     if jsonld:
-        data['title'] = jsonld.get('name', '')
         images = jsonld.get('image', [])
         data['image_url'] = (images[0] if isinstance(images, list) else images) or ''
+    if not data.get('image_url'):
+        og = _extract_og(soup)
+        data['image_url'] = og.get('image_url', '')
+
+    # 3. Prices — Sodimac renders prices-0 (offer/event) and prices-1 (normal/original)
+    #    Each section may contain multiple prices (e.g. per-m² and per-caja); take the max.
+    offer_section = soup.find(class_=re.compile(r'\bprices-0\b'))
+    orig_section = soup.find(class_=re.compile(r'\bprices-1\b'))
+
+    if offer_section:
+        data['offer_price'] = _max_price_in_section(offer_section)
+    if orig_section:
+        data['original_price'] = _max_price_in_section(orig_section)
+
+    # Fallback to JSON-LD if sections not found
+    if not data.get('offer_price') and jsonld:
         offers = jsonld.get('offers', {})
         if isinstance(offers, list):
             offers = offers[0] if offers else {}
@@ -190,55 +233,11 @@ def scrape_sodimac(url):
         if price:
             data['offer_price'] = _clean_price(str(price))
 
-    # 2. Title fallback
-    if not data.get('title'):
-        h1 = soup.find('h1')
-        data['title'] = h1.get_text(strip=True) if h1 else ''
-
-    # 3. Offer price — Sodimac event/internet price
-    if not data.get('offer_price'):
-        for attrs in [
-            {'class': re.compile(r'event[-_]?price|offer[-_]?price|precio[-_]?oferta', re.I)},
-            {'data-testid': re.compile(r'price', re.I)},
-            {'class': re.compile(r'primary[-_]?price|main[-_]?price', re.I)},
-        ]:
-            el = soup.find(attrs=attrs)
-            if el:
-                val = _clean_price(el.get_text(strip=True))
-                if val:
-                    data['offer_price'] = val
-                    break
-
-    # 4. Original / normal price (tachado)
-    if not data.get('original_price'):
-        for tag in ['s', 'del']:
-            el = soup.find(tag)
-            if el:
-                val = _clean_price(el.get_text(strip=True))
-                if val and val != data.get('offer_price'):
-                    data['original_price'] = val
-                    break
-        if not data.get('original_price'):
-            for attrs in [
-                {'class': re.compile(r'normal[-_]?price|original[-_]?price|regular[-_]?price', re.I)},
-            ]:
-                el = soup.find(attrs=attrs)
-                if el:
-                    val = _clean_price(el.get_text(strip=True))
-                    if val:
-                        data['original_price'] = val
-                        break
-
-    # Price fallbacks
+    # If there's no sale, original == offer
     if not data.get('original_price'):
         data['original_price'] = data.get('offer_price')
     if not data.get('offer_price'):
         data['offer_price'] = data.get('original_price')
-
-    # 5. Image fallback
-    if not data.get('image_url'):
-        og = _extract_og(soup)
-        data['image_url'] = og.get('image_url', '')
 
     return data
 
@@ -253,68 +252,15 @@ def scrape_falabella(url):
         'source_url': url,
     }
 
-    # 1. JSON-LD structured data
+    # 1. Title
+    h1 = soup.find('h1')
+    data['title'] = h1.get_text(strip=True) if h1 else ''
+
+    # 2. Image — JSON-LD first, then OG
     jsonld = _extract_jsonld(soup)
     if jsonld:
-        data['title'] = jsonld.get('name', '')
         images = jsonld.get('image', [])
         data['image_url'] = (images[0] if isinstance(images, list) else images) or ''
-        offers = jsonld.get('offers', {})
-        if isinstance(offers, list):
-            offers = offers[0] if offers else {}
-        price = offers.get('price') or offers.get('lowPrice')
-        if price:
-            data['offer_price'] = _clean_price(str(price))
-
-    # 2. Title fallback
-    if not data.get('title'):
-        h1 = soup.find('h1')
-        data['title'] = h1.get_text(strip=True) if h1 else ''
-
-    # 3. Falabella price section — prices are labeled "Precio Internet", "Precio Normal", etc.
-    price_section = (
-        soup.find(attrs={'class': re.compile(r'product-price|fb-price|prices-0', re.I)}) or
-        soup.find(attrs={'data-testid': re.compile(r'price', re.I)})
-    )
-    if price_section:
-        items = price_section.find_all('li') or [price_section]
-        for item in items:
-            label_text = item.get_text(' ', strip=True).lower()
-            val = None
-            for span in item.find_all('span', class_=re.compile(r'price|amount|copy', re.I)):
-                v = _clean_price(span.get_text(strip=True))
-                if v:
-                    val = v
-                    break
-            if not val:
-                val = _clean_price(item.get_text(strip=True))
-            if val:
-                if any(k in label_text for k in ('internet', 'oferta', 'cmr')):
-                    if not data.get('offer_price'):
-                        data['offer_price'] = val
-                elif 'normal' in label_text and not data.get('original_price'):
-                    data['original_price'] = val
-
-    # 4. Generic price fallback
-    if not data.get('offer_price'):
-        for attrs in [
-            {'class': re.compile(r'price', re.I)},
-            {'data-internet-price': True},
-        ]:
-            el = soup.find(attrs=attrs)
-            if el:
-                val = _clean_price(el.get_text(strip=True))
-                if val:
-                    data['offer_price'] = val
-                    break
-
-    # Price fallbacks
-    if not data.get('original_price'):
-        data['original_price'] = data.get('offer_price')
-    if not data.get('offer_price'):
-        data['offer_price'] = data.get('original_price')
-
-    # 5. Image fallback
     if not data.get('image_url'):
         img = (
             soup.find('img', attrs={'id': re.compile(r'product', re.I)}) or
@@ -325,6 +271,30 @@ def scrape_falabella(url):
         else:
             og = _extract_og(soup)
             data['image_url'] = og.get('image_url', '')
+
+    # 3. Prices — Falabella renders prices-0 (offer/internet) and prices-1 (normal/original)
+    offer_section = soup.find(class_=re.compile(r'\bprices-0\b'))
+    orig_section = soup.find(class_=re.compile(r'\bprices-1\b'))
+
+    if offer_section:
+        data['offer_price'] = _max_price_in_section(offer_section)
+    if orig_section:
+        data['original_price'] = _max_price_in_section(orig_section)
+
+    # Fallback to JSON-LD if sections not found
+    if not data.get('offer_price') and jsonld:
+        offers = jsonld.get('offers', {})
+        if isinstance(offers, list):
+            offers = offers[0] if offers else {}
+        price = offers.get('price') or offers.get('lowPrice')
+        if price:
+            data['offer_price'] = _clean_price(str(price))
+
+    # If there's no sale, original == offer
+    if not data.get('original_price'):
+        data['original_price'] = data.get('offer_price')
+    if not data.get('offer_price'):
+        data['offer_price'] = data.get('original_price')
 
     return data
 
