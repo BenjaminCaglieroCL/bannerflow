@@ -28,6 +28,10 @@
             <button class="tool-btn" onclick="addImagePlaceholder()">
                 <i class="bi bi-image"></i> Imagen Producto
             </button>
+            <button class="tool-btn bg-upload-btn">
+                <i class="bi bi-upload"></i> Subir Imagen
+                <input type="file" accept="image/*" onchange="addUploadedImage(this)">
+            </button>
             <button class="tool-btn" onclick="addText('Tienda', 18, false, 'store_name')">
                 <i class="bi bi-shop"></i> Nombre Tienda
             </button>
@@ -162,6 +166,13 @@
                 <div class="prop-group">
                     <label>Posición Y</label>
                     <input type="number" id="propTop" onchange="updateProp('top', parseFloat(this.value))">
+                </div>
+                <div class="prop-group" id="propReplaceImageGroup" style="display:none;">
+                    <label>Reemplazar Imagen</label>
+                    <button class="tool-btn bg-upload-btn w-100">
+                        <i class="bi bi-arrow-repeat"></i> Cambiar imagen
+                        <input type="file" accept="image/*" onchange="replaceSelectedImage(this)">
+                    </button>
                 </div>
             </div>
         </div>
@@ -299,6 +310,63 @@ function addImagePlaceholder() {
     canvas.setActiveObject(group);
 }
 
+function addUploadedImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        fabric.Image.fromURL(e.target.result, function(img) {
+            // Fit image inside canvas while keeping aspect ratio
+            const maxSize = Math.min(canvas.width, canvas.height) * 0.6;
+            const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
+            img.set({
+                left: (canvas.width - img.width * scale) / 2,
+                top: (canvas.height - img.height * scale) / 2,
+                scaleX: scale,
+                scaleY: scale,
+                dataType: 'custom_image',
+            });
+            canvas.add(img);
+            canvas.setActiveObject(img);
+            canvas.renderAll();
+            showToast('Imagen agregada al canvas');
+        });
+    };
+    reader.readAsDataURL(file);
+    // Reset input so the same file can be uploaded again
+    input.value = '';
+}
+
+function replaceSelectedImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const obj = canvas.getActiveObject();
+    if (!obj || obj.type !== 'image') return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const oldLeft = obj.left, oldTop = obj.top;
+        const oldScaleX = obj.scaleX, oldScaleY = obj.scaleY;
+        const oldAngle = obj.angle;
+        fabric.Image.fromURL(e.target.result, function(img) {
+            img.set({
+                left: oldLeft,
+                top: oldTop,
+                scaleX: oldScaleX,
+                scaleY: oldScaleY,
+                angle: oldAngle,
+                dataType: obj.dataType || 'custom_image',
+            });
+            canvas.remove(obj);
+            canvas.add(img);
+            canvas.setActiveObject(img);
+            canvas.renderAll();
+            showToast('Imagen reemplazada');
+        });
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+}
+
 function addRect() {
     const r = new fabric.Rect({
         left: 50,
@@ -421,8 +489,10 @@ function showProperties(obj) {
     document.getElementById('propTop').value = Math.round(obj.top || 0);
 
     const isText = obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox';
+    const isImage = obj.type === 'image';
     document.getElementById('propFontGroup').style.display = isText ? 'block' : 'none';
     document.getElementById('propFontSizeGroup').style.display = isText ? 'block' : 'none';
+    document.getElementById('propReplaceImageGroup').style.display = isImage ? 'block' : 'none';
 
     if (isText) {
         document.getElementById('propFontFamily').value = obj.fontFamily || 'Poppins';
