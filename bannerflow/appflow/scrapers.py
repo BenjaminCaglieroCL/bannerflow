@@ -158,6 +158,12 @@ def scrape_mercadolibre(url):
     # 3 & 4. Prices
     # Original price: <s> element — try legacy class first, then any <s> with a price fraction
     original_el = soup.find('s', class_=re.compile(r'ui-pdp-price__original-value'))
+    if not original_el:
+        # New page structure uses andes-money-amount--previous inside a <s>
+        for s_tag in soup.find_all('s'):
+            if s_tag.find('span', class_='andes-money-amount__fraction'):
+                original_el = s_tag
+                break
     if original_el:
         frac = original_el.find('span', class_='andes-money-amount__fraction')
         raw = frac.get_text(strip=True) if frac else original_el.get_text(strip=True)
@@ -245,7 +251,7 @@ def scrape_sodimac(url):
 # --- Falabella ---
 
 def scrape_falabella(url):
-    soup = _get_soup_playwright(url, wait_selector='h1', timeout=15000)
+    soup = _get_soup_playwright(url, wait_selector='[class*="prices-0"]', timeout=15000)
     data = {
         'store_name': 'Falabella',
         'store_logo': 'falabella',
@@ -256,21 +262,23 @@ def scrape_falabella(url):
     h1 = soup.find('h1')
     data['title'] = h1.get_text(strip=True) if h1 else ''
 
-    # 2. Image — JSON-LD first, then OG
+    # 2. Image — prefer large product img tag (w=1200,fit=pad) over JSON-LD /public URL
     jsonld = _extract_jsonld(soup)
-    if jsonld:
+    img_el = soup.find('img', src=re.compile(r'media\.falabella\.com.+w=\d+', re.I))
+    if img_el:
+        src = img_el.get('src', '')
+        # Upgrade any size param to 1200 for best quality
+        data['image_url'] = re.sub(r'/w=\d+,h=\d+,[^/\s]+', '/w=1200,h=1200,fit=pad', src)
+    elif jsonld:
         images = jsonld.get('image', [])
-        data['image_url'] = (images[0] if isinstance(images, list) else images) or ''
+        img_url = (images[0] if isinstance(images, list) else images) or ''
+        # Convert bare /public → explicit dimensions (avoids CORS issues)
+        if img_url.endswith('/public'):
+            img_url = img_url[:-len('/public')] + '/w=1200,h=1200,fit=pad'
+        data['image_url'] = img_url
     if not data.get('image_url'):
-        img = (
-            soup.find('img', attrs={'id': re.compile(r'product', re.I)}) or
-            soup.find('img', attrs={'class': re.compile(r'product.*image|gallery.*image', re.I)})
-        )
-        if img:
-            data['image_url'] = img.get('src', '') or img.get('data-src', '')
-        else:
-            og = _extract_og(soup)
-            data['image_url'] = og.get('image_url', '')
+        og = _extract_og(soup)
+        data['image_url'] = og.get('image_url', '')
 
     # 3. Prices — Falabella renders prices-0 (offer/internet) and prices-1 (normal/original)
     offer_section = soup.find(class_=re.compile(r'\bprices-0\b'))
