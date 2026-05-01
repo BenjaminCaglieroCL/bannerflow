@@ -156,7 +156,7 @@ def scrape_mercadolibre(url):
     data['image_url'] = src
 
     # 3 & 4. Prices
-    # Original price: <s> element with 'ui-pdp-price__original-value' class
+    # Original price: <s> element — try legacy class first, then any <s> with a price fraction
     original_el = soup.find('s', class_=re.compile(r'ui-pdp-price__original-value'))
     if original_el:
         frac = original_el.find('span', class_='andes-money-amount__fraction')

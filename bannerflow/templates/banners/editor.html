@@ -286,31 +286,30 @@ function addImagePlaceholder() {
         top: 80,
         width: 300,
         height: 300,
-        fill: 'rgba(255,255,255,0.1)',
+        fill: 'rgba(255,255,255,0.05)',
         stroke: '#7c3aed',
         strokeWidth: 2,
         strokeDashArray: [8, 4],
-        rx: 12,
-        ry: 12,
+        rx: 8,
+        ry: 8,
         dataType: 'product_image',
     });
 
-    const text = new fabric.Text('🖼 Imagen Producto', {
-        fontSize: 16,
+    const label = new fabric.Text('', {
+        left: 120 + 150,
+        top: 80 + 150,
+        fontSize: 14,
         fill: '#9ca3af',
         fontFamily: 'Inter',
         originX: 'center',
         originY: 'center',
+        selectable: false,
+        evented: false,
     });
 
-    const group = new fabric.Group([rect, text], {
-        left: 120,
-        top: 80,
-        dataType: 'product_image',
-    });
-
-    canvas.add(group);
-    canvas.setActiveObject(group);
+    canvas.add(rect);
+    canvas.add(label);
+    canvas.setActiveObject(rect);
 }
 
 function addUploadedImage(input) {
