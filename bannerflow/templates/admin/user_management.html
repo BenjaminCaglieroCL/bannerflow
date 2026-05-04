@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block title %}Gestión de Usuarios — BannerFlow{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width:900px;">
+
+  <div class="d-flex align-items-center gap-3 mb-5">
+    <div style="width:48px;height:48px;border-radius:14px;background:rgba(124,58,237,.15);display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:#c4b5fd;">
+      <i class="bi bi-people-fill"></i>
+    </div>
+    <div>
+      <h1 class="mb-0" style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1.7rem;">Gestión de Usuarios</h1>
+      <p class="mb-0" style="color:var(--text-secondary);font-size:.9rem;">Solo visible para administradores</p>
+    </div>
+  </div>
+
+  <!-- ===== Create user ===== -->
+  <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:28px;margin-bottom:32px;">
+    <h5 style="font-weight:700;margin-bottom:20px;"><i class="bi bi-person-plus me-2" style="color:#c4b5fd;"></i>Crear nuevo usuario</h5>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="create">
+      <div class="row g-3 align-items-end">
+        <div class="col-sm-4">
+          <label class="prop-group-label">Usuario</label>
+          <input type="text" name="username" placeholder="nombre_usuario" required
+            style="width:100%;padding:10px 14px;background:var(--bg-surface);border:1px solid var(--border-color);border-radius:10px;color:var(--text-primary);font-size:.95rem;">
+        </div>
+        <div class="col-sm-4">
+          <label class="prop-group-label">Contraseña</label>
+          <input type="text" name="password" placeholder="contraseña" required
+            style="width:100%;padding:10px 14px;background:var(--bg-surface);border:1px solid var(--border-color);border-radius:10px;color:var(--text-primary);font-size:.95rem;">
+        </div>
+        <div class="col-sm-2 d-flex align-items-center gap-2" style="padding-top:22px;">
+          <input type="checkbox" name="is_staff" value="1" id="isStaffCheck"
+            style="width:18px;height:18px;accent-color:var(--accent-1);cursor:pointer;">
+          <label for="isStaffCheck" style="color:var(--text-secondary);font-size:.9rem;cursor:pointer;margin:0;">Admin</label>
+        </div>
+        <div class="col-sm-2" style="padding-top:22px;">
+          <button type="submit" class="btn-gradient" style="width:100%;padding:10px;font-size:.95rem;">
+            <i class="bi bi-plus-lg me-1"></i>Crear
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- ===== User list ===== -->
+  <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;overflow:hidden;">
+    <div style="padding:20px 24px;border-bottom:1px solid var(--border-color);">
+      <h5 class="mb-0" style="font-weight:700;"><i class="bi bi-list-ul me-2" style="color:#c4b5fd;"></i>Usuarios registrados ({{ users|length }})</h5>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:var(--bg-surface);">
+            <th style="padding:12px 20px;text-align:left;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary);">ID</th>
+            <th style="padding:12px 20px;text-align:left;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary);">Usuario</th>
+            <th style="padding:12px 20px;text-align:left;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary);">Nivel</th>
+            <th style="padding:12px 20px;text-align:left;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary);">Plantillas</th>
+            <th style="padding:12px 20px;text-align:left;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary);">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          {% if u == request.user %}
+          <tr style="border-top:1px solid var(--border-color);background:rgba(124,58,237,.06);">
+          {% else %}
+          <tr style="border-top:1px solid var(--border-color);">
+          {% endif %}
+            <td style="padding:14px 20px;color:var(--text-secondary);font-size:.9rem;">{{ u.id }}</td>
+            <td style="padding:14px 20px;">
+              <span style="font-weight:600;">{{ u.username }}</span>
+              {% if u == request.user %}
+                <span style="font-size:.75rem;color:var(--text-secondary);margin-left:6px;">(tú)</span>
+              {% endif %}
+            </td>
+            <td style="padding:14px 20px;">
+              {% if u.is_staff %}
+                <span class="badge bg-warning text-dark" style="font-size:.78rem;">Admin</span>
+              {% else %}
+                <span style="color:var(--text-secondary);font-size:.85rem;">Usuario</span>
+              {% endif %}
+            </td>
+            <td style="padding:14px 20px;color:var(--text-secondary);font-size:.9rem;">
+              {{ u.templates.count }}
+            </td>
+            <td style="padding:14px 20px;">
+              <div class="d-flex gap-2 flex-wrap">
+
+                <!-- Reset password -->
+                <button type="button"
+                  data-user-id="{{ u.id }}"
+                  data-username="{{ u.username|escapejs }}"
+                  onclick="openResetModal(this.dataset.userId, this.dataset.username)"
+                  style="padding:5px 12px;background:var(--bg-surface);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:.82rem;cursor:pointer;transition:all .2s;"
+                  onmouseover="this.style.borderColor='var(--accent-1)'" onmouseout="this.style.borderColor='var(--border-color)'">
+                  <i class="bi bi-key me-1"></i>Contraseña
+                </button>
+
+                <!-- Delete (disabled for self) -->
+                {% if u != request.user %}
+                <form method="post" action="{% url 'banners:user-delete' u.id %}"
+                  data-username="{{ u.username|escapejs }}"
+                  onsubmit="return confirm('¿Eliminar al usuario ' + this.dataset.username + '? Esta acción no se puede deshacer.');">
+                  {% csrf_token %}
+                  <button type="submit"
+                    style="padding:5px 12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;color:#fca5a5;font-size:.82rem;cursor:pointer;transition:all .2s;"
+                    onmouseover="this.style.background='rgba(239,68,68,.2)'" onmouseout="this.style.background='rgba(239,68,68,.1)'">
+                    <i class="bi bi-trash me-1"></i>Eliminar
+                  </button>
+                </form>
+                {% endif %}
+
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" style="padding:32px;text-align:center;color:var(--text-secondary);">No hay usuarios registrados.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== Reset password modal ===== -->
+<div id="resetModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:36px;width:100%;max-width:400px;box-shadow:0 24px 60px rgba(0,0,0,.5);">
+    <h5 style="font-weight:700;margin-bottom:6px;"><i class="bi bi-key me-2" style="color:#c4b5fd;"></i>Cambiar contraseña</h5>
+    <p id="resetSubtitle" style="color:var(--text-secondary);font-size:.9rem;margin-bottom:24px;"></p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="reset_password">
+      <input type="hidden" name="user_id" id="resetUserId">
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary);margin-bottom:8px;">Nueva contraseña</label>
+        <input type="text" name="new_password" id="resetPassword" placeholder="Nueva contraseña" required
+          style="width:100%;padding:12px 14px;background:var(--bg-surface);border:1px solid var(--border-color);border-radius:10px;color:var(--text-primary);font-size:.95rem;">
+      </div>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn-gradient" style="flex:1;padding:11px;font-size:.95rem;">Guardar</button>
+        <button type="button" onclick="closeResetModal()"
+          style="flex:1;padding:11px;background:var(--bg-surface);border:1px solid var(--border-color);border-radius:10px;color:var(--text-primary);font-size:.95rem;cursor:pointer;">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openResetModal(userId, username) {
+  document.getElementById('resetUserId').value = userId;
+  document.getElementById('resetSubtitle').textContent = 'Usuario: ' + username;
+  document.getElementById('resetPassword').value = '';
+  const modal = document.getElementById('resetModal');
+  modal.style.display = 'flex';
+}
+function closeResetModal() {
+  document.getElementById('resetModal').style.display = 'none';
+}
+document.getElementById('resetModal').addEventListener('click', function(e) {
+  if (e.target === this) closeResetModal();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,326 @@
+{% extends 'base.html' %}
+{% block title %}Contacto e Información — BannerFlow{% endblock %}
+
+{% block extra_css %}
+<style>
+.contact-hero {
+    padding: 72px 0 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.contact-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at 25% 50%, rgba(124,58,237,.14) 0%, transparent 55%),
+        radial-gradient(ellipse at 78% 45%, rgba(244,114,182,.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+.contact-hero > * { position: relative; z-index: 1; }
+
+.info-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 32px 28px;
+    height: 100%;
+    transition: all .3s;
+}
+.info-card:hover {
+    border-color: var(--accent-1);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(124,58,237,.18);
+}
+.info-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    margin-bottom: 18px;
+}
+.info-icon.purple { background: rgba(124,58,237,.15); color: #c4b5fd; }
+.info-icon.pink   { background: rgba(244,114,182,.15); color: #fbcfe8; }
+.info-icon.cyan   { background: rgba(6,182,212,.15);   color: #a5f3fc; }
+.info-icon.green  { background: rgba(52,211,153,.15);  color: #a7f3d0; }
+
+.info-card h5 { font-weight: 700; margin-bottom: 8px; }
+.info-card p, .info-card a {
+    color: var(--text-secondary);
+    font-size: .93rem;
+    line-height: 1.65;
+    text-decoration: none;
+}
+.info-card a:hover { color: var(--text-primary); }
+
+.divider-line {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 56px 0;
+}
+
+.faq-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+.faq-question {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    text-align: left;
+    padding: 18px 22px;
+    font-size: .97rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    transition: background .2s;
+}
+.faq-question:hover { background: rgba(124,58,237,.06); }
+.faq-question i.arrow { transition: transform .25s; flex-shrink: 0; }
+.faq-question.open i.arrow { transform: rotate(180deg); }
+.faq-answer {
+    display: none;
+    padding: 0 22px 18px;
+    color: var(--text-secondary);
+    font-size: .9rem;
+    line-height: 1.7;
+}
+.faq-answer.open { display: block; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<section class="contact-hero">
+  <div class="container">
+    <div class="landing-badge mx-auto d-inline-flex mb-3">
+      <i class="bi bi-envelope-fill"></i>Contacto e Información
+    </div>
+    <h1 style="font-family:'Poppins',sans-serif;font-weight:800;font-size:clamp(2rem,4vw,3rem);margin-bottom:.75rem;">
+      ¿Necesitas ayuda o acceso?
+    </h1>
+    <p style="color:var(--text-secondary);font-size:1.1rem;max-width:520px;margin:0 auto;">
+      BannerFlow es una plataforma de acceso interno. Aquí encontrarás cómo contactarnos y todo lo que necesitas saber.
+    </p>
+  </div>
+</section>
+
+<!-- Contact cards -->
+<section class="pb-5">
+  <div class="container" style="max-width:900px;">
+    <div class="row g-4">
+
+      <div class="col-sm-6">
+        <div class="info-card">
+          <div class="info-icon purple"><i class="bi bi-person-badge-fill"></i></div>
+          <h5>Solicitar acceso</h5>
+          <p>
+            El acceso a BannerFlow es solo por invitación. Si eres parte del equipo y todavía no tienes cuenta,
+            contacta al administrador del sistema para que te cree las credenciales.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-sm-6">
+        <div class="info-card">
+          <div class="info-icon pink"><i class="bi bi-envelope-fill"></i></div>
+          <h5>Correo electrónico</h5>
+          <p>
+            Para consultas generales, soporte técnico o solicitudes:<br><br>
+            <a href="mailto:admin@bannerflow.cl">
+              <i class="bi bi-envelope me-1"></i>admin@bannerflow.cl
+            </a>
+          </p>
+        </div>
+      </div>
+
+      <div class="col-sm-6">
+        <div class="info-card">
+          <div class="info-icon cyan"><i class="bi bi-clock-fill"></i></div>
+          <h5>Horario de soporte</h5>
+          <p>
+            Atención disponible de lunes a viernes.<br>
+            <strong style="color:var(--text-primary);">9:00 — 18:00 hrs</strong> (hora Chile)<br><br>
+            Fuera de horario: dejanos un correo y te respondemos a la brevedad.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-sm-6">
+        <div class="info-card">
+          <div class="info-icon green"><i class="bi bi-shield-check-fill"></i></div>
+          <h5>Plataforma segura</h5>
+          <p>
+            Tus diseños y plantillas son <strong style="color:var(--text-primary);">completamente privados</strong>.
+            Solo tú (y los administradores) pueden ver tu biblioteca. No compartimos datos con terceros.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<hr class="divider-line">
+
+<!-- About -->
+<section class="pb-5">
+  <div class="container" style="max-width:900px;">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-5">
+        <p class="section-label">Sobre BannerFlow</p>
+        <h2 class="section-title">¿Qué es BannerFlow?</h2>
+        <p style="color:var(--text-secondary);line-height:1.75;margin-top:16px;">
+          BannerFlow es una herramienta interna de creación de banners publicitarios para redes sociales.
+          Permite importar datos de productos directamente desde las tiendas de e-commerce más grandes de Chile,
+          automatizando el proceso de diseño de publicaciones para Instagram, Facebook y WhatsApp.
+        </p>
+        <p style="color:var(--text-secondary);line-height:1.75;margin-top:12px;">
+          Desarrollado para equipos de marketing y community managers que necesitan generar contenido visual
+          de manera rápida, consistente y sin conocimientos avanzados de diseño.
+        </p>
+      </div>
+      <div class="col-lg-7">
+        <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:28px;">
+          <p class="section-label mb-3">Tiendas compatibles</p>
+          <div class="d-flex flex-column gap-3">
+
+            <div class="store-badge">
+              <div class="store-icon meli">ML</div>
+              <div class="store-info">
+                <strong>MercadoLibre</strong>
+                <span>Links <code style="font-size:.8rem;color:var(--accent-3);">articulo.mercadolibre.cl</code> y <code style="font-size:.8rem;color:var(--accent-3);">meli.la</code></span>
+              </div>
+            </div>
+
+            <div class="store-badge">
+              <div class="store-icon sodi">SD</div>
+              <div class="store-info">
+                <strong>Sodimac</strong>
+                <span>Links <code style="font-size:.8rem;color:var(--accent-3);">sodimac.cl/sodimac-cl/articulo</code></span>
+              </div>
+            </div>
+
+            <div class="store-badge">
+              <div class="store-icon fala">FL</div>
+              <div class="store-info">
+                <strong>Falabella</strong>
+                <span>Links <code style="font-size:.8rem;color:var(--accent-3);">falabella.com/falabella-cl/product</code></span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider-line">
+
+<!-- FAQ -->
+<section class="pb-5">
+  <div class="container" style="max-width:720px;">
+    <div class="text-center mb-5">
+      <p class="section-label">FAQ</p>
+      <h2 class="section-title">Preguntas frecuentes</h2>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">
+        ¿Cómo obtengo una cuenta?
+        <i class="bi bi-chevron-down arrow"></i>
+      </button>
+      <div class="faq-answer">
+        Las cuentas son creadas internamente por el administrador del sistema. No existe registro público.
+        Contacta al administrador por correo indicando tu nombre y área para solicitar acceso.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">
+        ¿Mis plantillas son privadas?
+        <i class="bi bi-chevron-down arrow"></i>
+      </button>
+      <div class="faq-answer">
+        Sí. Cada usuario solo puede ver y editar sus propias plantillas. Los administradores tienen acceso
+        a todas las plantillas del sistema para tareas de soporte.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">
+        ¿En qué formato se exportan los banners?
+        <i class="bi bi-chevron-down arrow"></i>
+      </button>
+      <div class="faq-answer">
+        Los banners se exportan en formato PNG en alta resolución, optimizados para publicaciones en
+        Instagram (feed cuadrado), Stories y otros formatos de redes sociales.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">
+        ¿Qué pasa si el link de un producto no funciona?
+        <i class="bi bi-chevron-down arrow"></i>
+      </button>
+      <div class="faq-answer">
+        La importación depende de la estructura de las tiendas. Si un link no funciona, asegúrate de
+        que sea un link directo al producto (no a una búsqueda). Si el problema persiste,
+        reporta el link al administrador para revisión.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">
+        ¿Se puede usar en dispositivos móviles?
+        <i class="bi bi-chevron-down arrow"></i>
+      </button>
+      <div class="faq-answer">
+        BannerFlow está optimizado para escritorio. El editor de canvas requiere una pantalla grande
+        para una experiencia cómoda. En móviles se puede acceder pero el editor puede verse limitado.
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- CTA -->
+<section style="padding:48px 0 80px;">
+  <div class="container text-center">
+    <p style="color:var(--text-secondary);margin-bottom:20px;">¿Listo para empezar a diseñar?</p>
+    <a href="{% url 'banners:login' %}" class="btn-gradient" style="font-size:1rem;padding:13px 36px;">
+      <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
+    </a>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleFaq(btn) {
+  const answer = btn.nextElementSibling;
+  const isOpen = answer.classList.contains('open');
+  // close all
+  document.querySelectorAll('.faq-answer.open').forEach(a => a.classList.remove('open'));
+  document.querySelectorAll('.faq-question.open').forEach(b => b.classList.remove('open'));
+  if (!isOpen) {
+    answer.classList.add('open');
+    btn.classList.add('open');
+  }
+}
+</script>
+{% endblock %}

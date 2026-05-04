@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% block title %}Iniciar Sesión — BannerFlow{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ===== Animated background ===== */
+.login-bg-canvas {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bg-icon {
+  position: absolute;
+  color: rgba(124, 58, 237, 0.12);
+  font-size: 2.2rem;
+  animation: floatIcon linear infinite;
+  user-select: none;
+}
+
+@keyframes floatIcon {
+  0%   { transform: translateY(110vh) rotate(0deg);   opacity: 0; }
+  5%   { opacity: 1; }
+  95%  { opacity: 1; }
+  100% { transform: translateY(-15vh) rotate(360deg); opacity: 0; }
+}
+
+/* ===== Icon fix: wrap input in relative container ===== */
+.login-input-wrap {
+  position: relative;
+}
+
+.login-input-wrap .field-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  font-size: 1rem;
+  pointer-events: none;
+  line-height: 1;
+}
+
+.login-input-wrap input {
+  width: 100%;
+  padding: 13px 14px 13px 42px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.login-input-wrap input:focus {
+  outline: none;
+  border-color: var(--accent-1);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+}
+
+.login-input-wrap input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Animated background -->
+<div class="login-bg-canvas" id="bgCanvas"></div>
+
+<div class="login-wrapper" style="position:relative;z-index:1;">
+  <div class="login-card">
+
+    <div class="login-logo">
+      <i class="bi bi-palette-fill"></i>
+    </div>
+
+    <h2>Bienvenido</h2>
+    <p class="login-sub">Ingresa tus credenciales para continuar</p>
+
+    {% if login_error %}
+      <div class="alert alert-danger py-2 px-3 mb-4" style="border-radius:10px;font-size:.9rem;">
+        <i class="bi bi-exclamation-circle me-2"></i>{{ login_error }}
+      </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'banners:login' %}{% if next %}?next={{ next }}{% endif %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+
+      <div class="login-field">
+        <label for="username">Usuario</label>
+        <div class="login-input-wrap">
+          <i class="bi bi-person field-icon"></i>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            placeholder="Tu nombre de usuario"
+            autocomplete="username"
+            autofocus
+            required
+          >
+        </div>
+      </div>
+
+      <div class="login-field">
+        <label for="password">Contraseña</label>
+        <div class="login-input-wrap">
+          <i class="bi bi-lock field-icon"></i>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            required
+          >
+        </div>
+      </div>
+
+      <button type="submit" class="btn-login">
+        <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
+      </button>
+    </form>
+
+    <p class="text-center mt-4 mb-0" style="color:var(--text-secondary);font-size:.82rem;">
+      <i class="bi bi-info-circle me-1"></i>
+      El acceso es solo por invitación. Contacta al administrador para obtener una cuenta.
+    </p>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const icons = [
+    'bi-tag-fill', 'bi-bag-fill', 'bi-cart-fill', 'bi-percent',
+    'bi-star-fill', 'bi-gift-fill', 'bi-box-seam-fill', 'bi-shop-window',
+    'bi-credit-card-fill', 'bi-receipt', 'bi-truck', 'bi-lightning-charge-fill',
+    'bi-currency-dollar', 'bi-handbag-fill', 'bi-phone-fill', 'bi-laptop-fill',
+    'bi-palette-fill', 'bi-scissors', 'bi-gem', 'bi-watch',
+    'bi-headphones', 'bi-camera-fill', 'bi-bicycle', 'bi-basket-fill',
+  ];
+
+  const colors = [
+    'rgba(124,58,237,0.13)',
+    'rgba(244,114,182,0.13)',
+    'rgba(6,182,212,0.12)',
+    'rgba(251,146,60,0.12)',
+  ];
+
+  const canvas = document.getElementById('bgCanvas');
+  const count = 28;
+
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('i');
+    el.className = 'bi ' + icons[Math.floor(Math.random() * icons.length)] + ' bg-icon';
+
+    const size   = 1.4 + Math.random() * 2.4;    // rem
+    const left   = Math.random() * 100;           // vw %
+    const delay  = -Math.random() * 22;           // seconds (negative = already in progress)
+    const dur    = 14 + Math.random() * 18;       // seconds
+
+    el.style.cssText = `
+      font-size:${size}rem;
+      left:${left}vw;
+      color:${colors[Math.floor(Math.random() * colors.length)]};
+      animation-duration:${dur}s;
+      animation-delay:${delay}s;
+    `;
+    canvas.appendChild(el);
+  }
+})();
+</script>
+{% endblock %}
