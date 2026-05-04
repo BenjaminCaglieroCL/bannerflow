@@ -32,5 +32,6 @@
    [Correcciones] 
 
    - Se corrigio un problema con el tamaño de la vista previa de cada plantilla.
+   - Se corrigio un error con el slide de comercios.
 
    

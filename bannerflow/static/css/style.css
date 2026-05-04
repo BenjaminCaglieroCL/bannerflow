@@ -877,6 +877,9 @@ body {
     color: var(--text-secondary);
     font-size: 1.05rem;
     max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
 }
 
 .feature-card {
@@ -927,52 +930,119 @@ body {
 
 /* Stores section */
 .stores-section {
-    padding: 70px 0;
+    padding: 70px 0 60px;
     border-top: 1px solid var(--border-color);
+    overflow: hidden;
 }
 
-.store-badge {
+/* ── Marquee strip ── */
+.stores-marquee-wrap {
+    position: relative;
+    overflow: hidden;
+    mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+}
+
+.stores-marquee-track {
     display: flex;
+    gap: 0;
+    width: max-content;
+    /* animation se aplica por JS con el pixel exacto */
+}
+
+/* ── Individual logo cards ── */
+.store-logo-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 14px;
+    justify-content: center;
+    gap: 10px;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 14px;
-    padding: 20px 24px;
-    transition: all 0.3s;
+    border-radius: 20px;
+    padding: 28px 36px;
+    min-width: 200px;
+    margin-right: 170px;
+    transition: border-color 0.3s, transform 0.3s;
+    cursor: default;
 }
 
-.store-badge:hover {
+.store-logo-card:hover {
     border-color: var(--accent-1);
-    transform: translateY(-2px);
+    transform: translateY(-4px);
 }
 
-.store-badge .store-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+.store-brand-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 800;
-    font-size: 0.75rem;
-    flex-shrink: 0;
+    height: 44px;
 }
 
-.store-icon.meli  { background: #ffe600; color: #333; }
-.store-icon.sodi  { background: #e30613; color: #fff; }
-.store-icon.fala  { background: #7bc740; color: #fff; }
+.store-logo-img {
+    height: 44px;
+    width: auto;
+    max-width: 140px;
+    object-fit: contain;
+    opacity: 0.9;
+    transition: opacity 0.3s;
+}
 
-.store-badge .store-info strong {
-    display: block;
+.store-logo-img.meli-logo   { height: 62px; max-width: 160px; }
+.store-logo-img.sodimac-logo { height: 62px; max-width: 160px; }
+
+.store-logo-card:hover .store-logo-img { opacity: 1; }
+
+.adidas-logo {
+    opacity: 0.5;
+    filter: brightness(0) invert(1);
+    height: 62px;
+    max-width: 160px;
+}
+
+.store-logo-name {
+    font-size: 0.78rem;
     font-weight: 700;
-    font-size: 1rem;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
 }
 
-.store-badge .store-info span {
+.store-logo-sub {
+    font-size: 0.6rem;
     color: var(--text-secondary);
-    font-size: 0.85rem;
+    opacity: 0.6;
+    margin-top: -6px;
 }
+
+/* ── Próximamente card ── */
+.store-logo-soon {
+    opacity: 0.6;
+    border-style: dashed;
+}
+
+.store-logo-soon:hover {
+    opacity: 1;
+    border-color: var(--accent-2);
+    transform: translateY(-4px);
+}
+
+.soon-badge {
+    position: absolute;
+    top: -11px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+    text-transform: uppercase;
+}
+
 
 /* Steps */
 .steps-section {

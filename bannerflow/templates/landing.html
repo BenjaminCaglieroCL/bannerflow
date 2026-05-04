@@ -386,36 +386,67 @@
       <div class="col-lg-6">
         <p class="section-label">Comercios soportados</p>
         <h2 class="section-title">Integrado con las tiendas más grandes de Chile</h2>
+        <p class="section-sub mt-2 text-center">Pega el link del producto y extraemos todo automáticamente.</p>
       </div>
     </div>
-    <div class="row g-4 justify-content-center">
-      <div class="col-sm-6 col-lg-4">
-        <div class="store-badge">
-          <div class="store-icon meli">ML</div>
-          <div class="store-info">
-            <strong>MercadoLibre</strong>
-            <span>Links artículo.mercadolibre.cl y meli.la</span>
-          </div>
+  </div>
+
+  <!-- Infinite logo strip -->
+  <div class="stores-marquee-wrap">
+    <div class="stores-marquee-track">
+
+      <!-- Set 1 -->
+      <div class="store-logo-card">
+        <img src="https://vectorseek.com/wp-content/uploads/2021/12/MercadoLibre-Logo-Vector.png"
+             alt="MercadoLibre" class="store-logo-img">
+      </div>
+      <div class="store-logo-card">
+        <img src="https://res.cloudinary.com/db0zskqzs/image/upload/v1777869889/descargar_ovwqtp.png"
+             alt="Meli" class="store-logo-img meli-logo">
+      </div>
+      <div class="store-logo-card">
+        <img src="https://www.seekpng.com/png/full/322-3225648_sodimac-homecenter-logo-png-transparent-sodimac-logo-png.png"
+             alt="Sodimac" class="store-logo-img sodimac-logo">
+      </div>
+      <div class="store-logo-card">
+        <div class="store-brand-icon">
+          <svg viewBox="0 0 110 36" width="110" height="36" fill="none">
+            <text x="55" y="28" text-anchor="middle" font-family="Arial,sans-serif" font-weight="700" font-size="22" fill="#7BC740">Falabella</text>
+          </svg>
         </div>
       </div>
-      <div class="col-sm-6 col-lg-4">
-        <div class="store-badge">
-          <div class="store-icon sodi">SD</div>
-          <div class="store-info">
-            <strong>Sodimac</strong>
-            <span>Links sodimac.cl/articulo</span>
-          </div>
+      <div class="store-logo-card store-logo-soon">
+        <img src="https://res.cloudinary.com/db0zskqzs/image/upload/v1777869889/descargar_1_rwhc87.png"
+             alt="Adidas" class="store-logo-img adidas-logo">
+        <span class="store-logo-name">Próximamente</span>
+      </div>
+
+      <!-- Set 2 — copia exacta para que el loop sea perfecto -->
+      <div class="store-logo-card">
+        <img src="https://vectorseek.com/wp-content/uploads/2021/12/MercadoLibre-Logo-Vector.png"
+             alt="MercadoLibre" class="store-logo-img">
+      </div>
+      <div class="store-logo-card">
+        <img src="https://res.cloudinary.com/db0zskqzs/image/upload/v1777869889/descargar_ovwqtp.png"
+             alt="Meli" class="store-logo-img meli-logo">
+      </div>
+      <div class="store-logo-card">
+        <img src="https://www.seekpng.com/png/full/322-3225648_sodimac-homecenter-logo-png-transparent-sodimac-logo-png.png"
+             alt="Sodimac" class="store-logo-img sodimac-logo">
+      </div>
+      <div class="store-logo-card">
+        <div class="store-brand-icon">
+          <svg viewBox="0 0 110 36" width="110" height="36" fill="none">
+            <text x="55" y="28" text-anchor="middle" font-family="Arial,sans-serif" font-weight="700" font-size="22" fill="#7BC740">Falabella</text>
+          </svg>
         </div>
       </div>
-      <div class="col-sm-6 col-lg-4">
-        <div class="store-badge">
-          <div class="store-icon fala">FL</div>
-          <div class="store-info">
-            <strong>Falabella</strong>
-            <span>Links falabella.com/product</span>
-          </div>
-        </div>
+      <div class="store-logo-card store-logo-soon">
+        <img src="https://res.cloudinary.com/db0zskqzs/image/upload/v1777869889/descargar_1_rwhc87.png"
+             alt="Adidas" class="store-logo-img adidas-logo">
+        <span class="store-logo-name">Próximamente</span>
       </div>
+
     </div>
   </div>
 </section>
@@ -481,6 +512,7 @@
 
 {% block extra_js %}
 <script>
+/* ── Phone carousel ── */
 (function(){
   var track = document.getElementById('heroTrack');
   var dots  = document.querySelectorAll('#heroDots .c-dot');
@@ -504,6 +536,39 @@
       timer = setInterval(next, 3200);
     });
   });
+})();
+
+/* ── Stores infinite marquee ── */
+(function(){
+  var wrap  = document.querySelector('.stores-marquee-wrap');
+  var track = document.querySelector('.stores-marquee-track');
+  if(!wrap || !track) return;
+
+  function initMarquee(){
+    /* Set 1 is the first half of the track — measure its exact pixel width */
+    var setW = Math.round(track.scrollWidth / 2);
+
+    /* Inject @keyframes with exact pixel value (not %) so it never drifts */
+    var style = document.createElement('style');
+    style.textContent =
+      '@keyframes storesMarquee{' +
+        'from{transform:translateX(0)}' +
+        'to{transform:translateX(-' + setW + 'px)}' +
+      '}';
+    document.head.appendChild(style);
+
+    track.style.animation = 'storesMarquee 22s linear infinite';
+
+    wrap.addEventListener('mouseenter', function(){ track.style.animationPlayState='paused'; });
+    wrap.addEventListener('mouseleave', function(){ track.style.animationPlayState='running'; });
+  }
+
+  /* Wait for all images so sizes are final */
+  if(document.readyState === 'complete'){
+    initMarquee();
+  } else {
+    window.addEventListener('load', initMarquee);
+  }
 })();
 </script>
 {% endblock %}
