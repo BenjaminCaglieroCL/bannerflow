@@ -1,40 +1,17 @@
 {% extends 'base.html' %}
 {% block title %}BannerFlow — Crea Banners para Redes Sociales{% endblock %}
 
-{% block extra_css %}
-<style>
-  /* Animated gradient text for the hero */
-  @keyframes gradientShift {
-    0%  { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100%{ background-position: 0% 50%; }
-  }
-  .animated-gradient {
-    background: linear-gradient(135deg, #7c3aed, #f472b6, #06b6d4, #7c3aed);
-    background-size: 300% 300%;
-    animation: gradientShift 5s ease infinite;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  @keyframes float {
-    0%, 100% { transform: perspective(1000px) rotateY(-6deg) rotateX(2deg) translateY(0); }
-    50%       { transform: perspective(1000px) rotateY(-6deg) rotateX(2deg) translateY(-12px); }
-  }
-  .hero-mockup { animation: float 5s ease-in-out infinite; }
-  .hero-mockup:hover { animation: none; }
-</style>
-{% endblock %}
+{% block extra_css %}{% endblock %}
 
 {% block content %}
 
 <!-- ==================== HERO ==================== -->
 <section class="landing-hero">
   <div class="container">
-    <div class="row align-items-center g-5">
+    <div class="row align-items-center g-4">
 
       <!-- Left — copy -->
-      <div class="col-lg-6">
+      <div class="col-lg-4">
         <div class="landing-badge">
           <i class="bi bi-lightning-charge-fill"></i>
           Diseñado para e-commerce chileno
@@ -63,35 +40,197 @@
         </p>
       </div>
 
-      <!-- Right — mockup -->
-      <div class="col-lg-6 d-none d-lg-block">
-        <div class="hero-mockup">
-          <div class="mockup-header">
-            <span class="mockup-dot" style="background:#ff5f56"></span>
-            <span class="mockup-dot" style="background:#ffbd2e"></span>
-            <span class="mockup-dot" style="background:#27c93f"></span>
-            <span style="flex:1;text-align:center;color:var(--text-secondary);font-size:.8rem;">BannerFlow Editor</span>
-          </div>
-          <div class="mockup-canvas">
-            <div class="mockup-banner-preview">
-              <div style="width:60px;height:60px;background:var(--bg-surface);border-radius:10px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;">
-                <i class="bi bi-image" style="font-size:1.5rem;color:var(--text-secondary)"></i>
-              </div>
-              <div style="font-weight:700;font-size:1rem;margin-bottom:6px;">Zapatilla Running Pro X</div>
-              <div style="color:var(--text-secondary);font-size:.8rem;margin-bottom:10px;">MercadoLibre</div>
-              <div class="mockup-price-tag">
-                <span class="mockup-price-original">$64.990</span>
-                <span class="mockup-price-offer">$49.990</span>
-              </div>
-              <div style="margin-top:10px;display:inline-block;background:rgba(124,58,237,.2);color:#c4b5fd;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600;">
-                ¡23% OFF!
+      <!-- Right — Banner cards cluster + iPhone -->
+      <div class="col-lg-8 d-none d-lg-block ps-0">
+        <div class="hero-visual">
+
+          <!-- ===== Banner cards cluster (left) ===== -->
+          <div class="banner-cards-cluster">
+
+            <!-- Card 1 — 1:1 — MercadoLibre TV -->
+            <!-- IMAGEN: cambia el src de <img> por el URL que quieras -->
+            <div class="banner-card bc-sq1">
+              <div class="bc-inner" style="background:linear-gradient(145deg,#0a0f1e,#0d2447);">
+                <div style="flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+                  <img src="https://images.unsplash.com/photo-1593784991095-a205069470b6?w=400&fit=crop&auto=format"
+                       alt="Samsung TV" style="width:100%;height:100%;object-fit:cover;opacity:.9;">
+                </div>
+                <div style="padding:8px 10px;background:rgba(0,0,0,.75);">
+                  <div style="font-size:.5rem;font-weight:800;color:#ffe600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2px;">MercadoLibre</div>
+                  <div style="font-size:.65rem;font-weight:700;color:#fff;margin-bottom:4px;">Samsung TV 55" 4K</div>
+                  <div style="display:flex;align-items:baseline;gap:5px;">
+                    <span style="font-size:.55rem;color:rgba(255,255,255,.4);text-decoration:line-through;">$579.990</span>
+                    <span style="font-size:.85rem;font-weight:800;color:#0ea5e9;font-family:'Poppins',sans-serif;">$399.990</span>
+                  </div>
+                  <div style="margin-top:4px;background:rgba(14,165,233,.15);color:#0ea5e9;font-size:.5rem;font-weight:700;padding:2px 7px;border-radius:20px;display:inline-block;">-31% OFF</div>
+                </div>
               </div>
             </div>
-            <div style="width:100%;height:8px;background:var(--bg-surface);border-radius:4px;overflow:hidden;">
-              <div style="width:68%;height:100%;background:var(--accent-gradient);border-radius:4px;"></div>
+
+            <!-- Card 2 — 1:1 — Adidas -->
+            <!-- IMAGEN: cambia el src de <img> por el URL que quieras -->
+            <div class="banner-card bc-sq2">
+              <div class="bc-inner" style="background:#09090b;">
+                <div style="flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+                  <img src="https://www.runningshoesguru.com/wp-content/uploads/2022/01/Adidas-Ultraboost-22-pic-19.jpeg"
+                       alt="Adidas Shoe" style="width:100%;height:100%;object-fit:cover;opacity:.92;">
+                </div>
+                <div style="padding:8px 10px;background:rgba(0,0,0,.75);">
+                  <div style="font-size:.5rem;font-weight:800;color:rgba(255,255,255,.6);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">ADIDAS</div>
+                  <div style="font-size:.65rem;font-weight:700;color:#fff;margin-bottom:4px;">Ultraboost 22 Running</div>
+                  <div style="display:flex;align-items:baseline;gap:5px;">
+                    <span style="font-size:.55rem;color:rgba(255,255,255,.4);text-decoration:line-through;">$149.990</span>
+                    <span style="font-size:.85rem;font-weight:800;color:#a3e635;font-family:'Poppins',sans-serif;">$99.990</span>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+
+            <!-- Card 3 — 4:5 — Falabella -->
+            <!-- IMAGEN: cambia el src de <img> por el URL que quieras -->
+            <div class="banner-card bc-45">
+              <div class="bc-inner" style="background:linear-gradient(170deg,#011a10,#064e3b);">
+                <div style="flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+                  <img src="https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=400&fit=crop&auto=format"
+                       alt="Laptop HP" style="width:100%;height:100%;object-fit:cover;opacity:.9;">
+                </div>
+                <div style="padding:8px 10px;background:rgba(0,0,0,.75);">
+                  <div style="font-size:.5rem;font-weight:800;color:#7bc740;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2px;">Falabella</div>
+                  <div style="font-size:.65rem;font-weight:700;color:#fff;margin-bottom:4px;">Laptop HP 15" i5 512GB</div>
+                  <div style="display:flex;align-items:baseline;gap:5px;margin-bottom:4px;">
+                    <span style="font-size:.55rem;color:rgba(255,255,255,.4);text-decoration:line-through;">$649.990</span>
+                    <span style="font-size:.85rem;font-weight:800;color:#7bc740;font-family:'Poppins',sans-serif;">$449.990</span>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div style="background:rgba(123,199,64,.15);color:#7bc740;font-size:.5rem;font-weight:700;padding:2px 7px;border-radius:20px;">-31% OFF</div>
+                    <div style="font-size:.5rem;color:rgba(255,255,255,.35);">★★★★☆</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /banner-cards-cluster -->
+
+          <!-- ===== iPhone 17 Pro Max ===== -->
+          <div class="hero-mockup">
+            <div class="iphone-btn action-btn"></div>
+            <div class="iphone-btn vol-up-btn"></div>
+            <div class="iphone-btn vol-down-btn"></div>
+            <div class="iphone-btn power-btn"></div>
+            <div class="iphone-screen">
+              <!-- Dynamic Island -->
+              <div class="iphone-topbar">
+                <div class="dynamic-island"></div>
+              </div>
+              <!-- Status bar overlay -->
+              <div class="iphone-statusbar">
+                <span class="sb-time">9:41</span>
+                <div class="sb-icons">
+                  <svg width="12" height="10" viewBox="0 0 13 10" fill="none">
+                    <rect x="0" y="6" width="2.5" height="4" rx=".8" fill="white" opacity=".4"/>
+                    <rect x="3.5" y="4" width="2.5" height="6" rx=".8" fill="white" opacity=".65"/>
+                    <rect x="7" y="2" width="2.5" height="8" rx=".8" fill="white"/>
+                    <rect x="10.5" y="0" width="2.5" height="10" rx=".8" fill="white"/>
+                  </svg>
+                  <svg width="13" height="10" viewBox="0 0 14 10" fill="none">
+                    <path d="M1 4 Q3.5 .5 7 .5 Q10.5 .5 13 4" stroke="white" stroke-width="1.4" fill="none" stroke-linecap="round" opacity=".4"/>
+                    <path d="M3 6.5 Q5 4 7 4 Q9 4 11 6.5" stroke="white" stroke-width="1.4" fill="none" stroke-linecap="round" opacity=".7"/>
+                    <circle cx="7" cy="9" r="1.2" fill="white"/>
+                  </svg>
+                  <svg width="22" height="11" viewBox="0 0 22 11" fill="none">
+                    <rect x=".5" y=".5" width="18" height="10" rx="2.5" stroke="white" stroke-width="1"/>
+                    <rect x="1.5" y="1.5" width="15" height="8" rx="2" fill="white"/>
+                    <rect x="19" y="3.5" width="2" height="4" rx="1" fill="rgba(255,255,255,.5)"/>
+                  </svg>
+                </div>
+              </div>
+              <!-- App bar overlay -->
+              <div class="iphone-app-bar">
+                <span class="app-bar-title">BannerFlow</span>
+                <div class="app-bar-icons">
+                  <i class="bi bi-bell" style="font-size:.6rem;color:rgba(255,255,255,.5)"></i>
+                  <div class="app-bar-avatar">B</div>
+                </div>
+              </div>
+              <!-- Carousel (fills full screen) -->
+              <div class="mockup-carousel" id="heroCarousel">
+                <div class="carousel-track" id="heroTrack">
+
+                  <!-- Slide 1 — iPhone 15 Pro -->
+                  <div class="banner-slide slide-1">
+                    <div class="s-art" style="overflow:hidden;">
+                      <span class="s-badge">-25% OFF</span>
+                      <img src="https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&fit=crop&q=85&auto=format"
+                           alt="iPhone 15 Pro" style="width:100%;height:100%;object-fit:cover;opacity:.88;">
+                    </div>
+                    <div class="slide-info">
+                      <div class="s-row1"><span class="s-store" style="color:#ffe600;">MercadoLibre</span><span class="s-stars">★★★★★</span></div>
+                      <div class="s-title">iPhone 15 Pro 256GB Titanio Negro</div>
+                      <div class="s-prices"><span class="s-orig">$999.990</span><span class="s-offer" style="color:#0ea5e9;">$749.990</span></div>
+                      <span class="s-cta">Ver oferta →</span>
+                    </div>
+                  </div>
+
+                  <!-- Slide 2 — Adidas Jacket -->
+                  <div class="banner-slide slide-2">
+                    <div class="shoe-wrap" style="overflow:hidden;">
+                      <span class="s-badge">-40% OFF</span>
+                      <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&fit=crop&q=85&auto=format"
+                           alt="Adidas Jacket" style="width:100%;height:100%;object-fit:cover;opacity:.88;">
+                    </div>
+                    <div class="slide-info">
+                      <div class="s-row1"><span class="s-store" style="color:rgba(255,255,255,.8);">Adidas Chile</span><span class="s-stars">★★★★★</span></div>
+                      <div class="s-title">Chaqueta Adidas Essentials 3-Stripes</div>
+                      <div class="s-prices"><span class="s-orig">$79.990</span><span class="s-offer" style="color:#a3e635;">$47.990</span></div>
+                      <span class="s-cta">Ver oferta →</span>
+                    </div>
+                  </div>
+
+                  <!-- Slide 3 — AirPods Pro -->
+                  <div class="banner-slide slide-3">
+                    <div class="headphone-wrap" style="overflow:hidden;">
+                      <span class="s-badge">-22% OFF</span>
+                      <img src="https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=400&fit=crop&q=85&auto=format"
+                           alt="AirPods Pro" style="width:100%;height:100%;object-fit:cover;opacity:.88;">
+                    </div>
+                    <div class="slide-info">
+                      <div class="s-row1"><span class="s-store" style="color:#c4b5fd;">MercadoLibre</span><span class="s-stars">★★★★★</span></div>
+                      <div class="s-title">Apple AirPods Pro 2da Generación</div>
+                      <div class="s-prices"><span class="s-orig">$229.990</span><span class="s-offer" style="color:#c4b5fd;">$179.990</span></div>
+                      <span class="s-cta">Ver oferta →</span>
+                    </div>
+                  </div>
+
+                  <!-- Slide 4 — PS5 -->
+                  <div class="banner-slide slide-4">
+                    <div class="laptop-wrap" style="overflow:hidden;">
+                      <span class="s-badge">-20% OFF</span>
+                      <img src="https://images.unsplash.com/photo-1607853202273-797f1c22a38e?w=400&fit=crop&q=85&auto=format"
+                           alt="PlayStation 5" style="width:100%;height:100%;object-fit:cover;opacity:.88;">
+                    </div>
+                    <div class="slide-info">
+                      <div class="s-row1"><span class="s-store" style="color:#7bc740;">Sodimac</span><span class="s-stars">★★★★★</span></div>
+                      <div class="s-title">PlayStation 5 Slim + 2 Controles</div>
+                      <div class="s-prices"><span class="s-orig">$649.990</span><span class="s-offer" style="color:#7bc740;">$519.990</span></div>
+                      <span class="s-cta">Ver oferta →</span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+              <!-- Dots -->
+              <div class="carousel-dots" id="heroDots">
+                <div class="c-dot active" data-idx="0"></div>
+                <div class="c-dot" data-idx="1"></div>
+                <div class="c-dot" data-idx="2"></div>
+                <div class="c-dot" data-idx="3"></div>
+              </div>
+              <!-- Home indicator -->
+              <div class="iphone-home-indicator"></div>
+            </div><!-- /iphone-screen -->
+          </div><!-- /hero-mockup -->
+
+        </div><!-- /hero-visual -->
       </div>
 
     </div>
@@ -253,4 +392,33 @@
   </div>
 </section>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function(){
+  var track = document.getElementById('heroTrack');
+  var dots  = document.querySelectorAll('#heroDots .c-dot');
+  if(!track) return;
+  var cur = 0, total = 4, timer;
+
+  function goTo(n){
+    cur = (n + total) % total;
+    track.style.transform = 'translateX(-' + (cur * 100) + '%)';
+    dots.forEach(function(d,i){ d.classList.toggle('active', i===cur); });
+  }
+
+  function next(){ goTo(cur+1); }
+
+  timer = setInterval(next, 3200);
+
+  dots.forEach(function(d){
+    d.addEventListener('click', function(){
+      clearInterval(timer);
+      goTo(+this.dataset.idx);
+      timer = setInterval(next, 3200);
+    });
+  });
+})();
+</script>
 {% endblock %}

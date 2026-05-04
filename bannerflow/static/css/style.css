@@ -650,77 +650,211 @@ body {
     line-height: 1.65;
 }
 
-.hero-mockup {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 20px;
+/* ===== Hero layout ===== */
+.hero-visual {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    justify-content: flex-start;
+    margin-left: 200px;
+}
+
+/* ===== Banner cards cluster ===== */
+.banner-cards-cluster {
+    position: relative;
+    width: 410px;
+    height: 700px;
+    flex-shrink: 0;
+}
+
+.banner-card {
+    position: absolute;
+    border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(124,58,237,0.15);
-    transform: perspective(1000px) rotateY(-6deg) rotateX(2deg);
-    transition: transform 0.4s ease;
+    box-shadow: 0 12px 40px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.06);
+    transition: transform .3s ease, box-shadow .3s ease, z-index 0s;
 }
 
-.hero-mockup:hover {
-    transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
+.banner-card:hover {
+    transform: translateY(-5px) scale(1.02) !important;
+    box-shadow: 0 22px 60px rgba(0,0,0,.7);
+    z-index: 20 !important;
 }
 
-.mockup-header {
-    background: var(--bg-surface);
-    padding: 12px 18px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border-bottom: 1px solid var(--border-color);
+.bc-inner { width: 100%; height: 100%; display: flex; flex-direction: column; }
+
+/* Card 1 — 1:1 top-right */
+.bc-sq1 { width: 290px; height: 290px; top: 0; right: 0; transform: rotate(5deg); z-index: 3; }
+/* Card 2 — 1:1 middle-left */
+.bc-sq2 { width: 275px; height: 275px; top: 235px; left: 0; transform: rotate(-6deg); z-index: 2; }
+/* Card 3 — 4:5 bottom-right */
+.bc-45  { width: 240px; height: 300px; bottom: 0; right: 20px; transform: rotate(2deg); z-index: 1; }
+
+/* ===== iPhone 17 Pro Max frame ===== */
+@keyframes floatMockup {
+    0%, 100% { transform: perspective(1200px) rotateY(-8deg) rotateX(3deg) translateY(0); }
+    50%       { transform: perspective(1200px) rotateY(-8deg) rotateX(3deg) translateY(-10px); }
 }
 
-.mockup-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
+@keyframes gradientShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
-.mockup-canvas {
-    background: var(--bg-dark);
-    aspect-ratio: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 14px;
-    padding: 40px;
-}
-
-.mockup-banner-preview {
-    width: 100%;
-    background: linear-gradient(135deg, #1a1a24, #22223a);
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    padding: 24px;
-    text-align: center;
-}
-
-.mockup-price-tag {
-    display: inline-flex;
-    gap: 10px;
-    align-items: baseline;
-    margin-top: 12px;
-}
-
-.mockup-price-original {
-    color: var(--text-secondary);
-    text-decoration: line-through;
-    font-size: 0.9rem;
-}
-
-.mockup-price-offer {
-    background: var(--accent-gradient);
+.animated-gradient {
+    background: linear-gradient(135deg, #7c3aed, #f472b6, #06b6d4, #7c3aed);
+    background-size: 300% 300%;
+    animation: gradientShift 5s ease infinite;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    font-size: 1.5rem;
-    font-weight: 800;
-    font-family: 'Poppins', sans-serif;
 }
+
+.hero-mockup {
+    position: relative;
+    width: 248px;
+    aspect-ratio: 393/852;
+    border-radius: 40px;
+    padding: 4px;
+    background: linear-gradient(160deg,
+        #b8b8c0 0%, #9a9aa8 8%, #d4d4dc 18%,
+        #7c7c88 28%, #c8c8d0 40%,
+        #a4a4b0 55%, #d8d8e0 68%,
+        #8c8c98 78%, #bcbcc8 88%, #a0a0ac 100%);
+    box-shadow:
+        0 0 0 1px rgba(180,180,200,.4),
+        0 40px 100px rgba(0,0,0,.7),
+        0 20px 50px rgba(0,0,0,.5),
+        inset 0 1px 0 rgba(255,255,255,.25);
+    flex-shrink: 0;
+    overflow: visible !important;
+    border: none !important;
+    animation: floatMockup 5s ease-in-out infinite;
+}
+
+.hero-mockup:hover {
+    animation: none;
+}
+
+/* Side buttons */
+.iphone-btn { position: absolute; background: linear-gradient(90deg,#8a8a96,#b4b4c0,#8a8a96); border-radius: 3px; }
+.action-btn   { width: 3px; height: 28px; left: -3px; top: 95px;  border-radius: 3px 0 0 3px; }
+.vol-up-btn   { width: 3px; height: 40px; left: -3px; top: 140px; border-radius: 3px 0 0 3px; }
+.vol-down-btn { width: 3px; height: 40px; left: -3px; top: 192px; border-radius: 3px 0 0 3px; }
+.power-btn    { width: 3px; height: 60px; right: -3px; top: 150px; border-radius: 0 3px 3px 0; }
+
+/* iPhone screen */
+.iphone-screen {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 36px;
+    overflow: hidden;
+    background: #000;
+}
+
+/* ===== iPhone internal overlays ===== */
+.iphone-topbar {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+    height: 38px; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(to bottom, rgba(0,0,0,.55) 0%, transparent 100%);
+    pointer-events: none;
+}
+.dynamic-island {
+    width: 30%; height: 24px;
+    background: #0a0a0a;
+    border-radius: 18px;
+    box-shadow: 0 0 0 1px #1a1a1c;
+}
+.iphone-statusbar {
+    position: absolute; top: 38px; left: 0; right: 0; z-index: 10;
+    height: 16px; padding: 0 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: transparent; flex-shrink: 0; pointer-events: none;
+}
+.sb-time { font-size: .55rem; font-weight: 700; color: #fff; letter-spacing: .2px; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+.sb-icons { display: flex; align-items: center; gap: 3px; }
+
+.iphone-app-bar {
+    position: absolute; bottom: 28px; left: 0; right: 0; z-index: 10;
+    height: 34px; padding: 0 11px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(to top, rgba(0,0,0,.7) 0%, transparent 100%);
+    flex-shrink: 0; pointer-events: none;
+}
+.app-bar-title  { font-size: .65rem; font-weight: 800; color: #fff; letter-spacing: .4px; text-shadow: 0 1px 4px rgba(0,0,0,.9); }
+.app-bar-icons  { display: flex; align-items: center; gap: 7px; }
+.app-bar-avatar {
+    width: 19px; height: 19px; border-radius: 50%;
+    background: linear-gradient(135deg,#7c3aed,#f472b6);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .5rem; font-weight: 800; color: #fff;
+}
+
+.iphone-home-indicator {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 10;
+    height: 20px; display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+}
+.iphone-home-indicator::before {
+    content: ''; display: block;
+    width: 32%; height: 4px; border-radius: 3px;
+    background: rgba(255,255,255,.28);
+}
+
+/* ===== Carousel ===== */
+.mockup-carousel { position: absolute; inset: 0; overflow: hidden; }
+.carousel-track  { display: flex; height: 100%; transition: transform .55s cubic-bezier(.4,0,.2,1); }
+.banner-slide    { min-width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+/* Slides */
+.slide-1 { background: #0a0f1e; }
+.slide-1 .s-art      { position: absolute; inset: 0; overflow: hidden; }
+.slide-1 .s-badge    { position: absolute; top: 54px; right: 8px; background: #ffe600; color: #0f172a; font-size: .58rem; font-weight: 800; padding: 2px 7px; border-radius: 20px; z-index: 5; }
+
+.slide-2 { background: #09090b; }
+.slide-2 .shoe-wrap  { position: absolute; inset: 0; overflow: hidden; }
+.slide-2 .s-badge    { position: absolute; top: 54px; right: 8px; background: #22c55e; color: #fff; font-size: .58rem; font-weight: 800; padding: 2px 7px; border-radius: 20px; z-index: 5; }
+
+.slide-3 { background: #150825; }
+.slide-3 .headphone-wrap { position: absolute; inset: 0; overflow: hidden; }
+.slide-3 .s-badge    { position: absolute; top: 54px; right: 8px; background: #f472b6; color: #fff; font-size: .58rem; font-weight: 800; padding: 2px 7px; border-radius: 20px; z-index: 5; }
+
+.slide-4 { background: #011a10; }
+.slide-4 .laptop-wrap { position: absolute; inset: 0; overflow: hidden; }
+.slide-4 .s-badge    { position: absolute; top: 54px; right: 8px; background: #7bc740; color: #fff; font-size: .58rem; font-weight: 800; padding: 2px 7px; border-radius: 20px; z-index: 5; }
+
+/* Slide info bottom overlay */
+.slide-info {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 5;
+    padding: 10px 14px 28px;
+    background: linear-gradient(to top, rgba(0,0,0,.92) 0%, rgba(0,0,0,.6) 70%, transparent 100%);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+.slide-info .s-row1  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+.slide-info .s-store { font-size: .56rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+.slide-info .s-stars { font-size: .58rem; color: #f59e0b; }
+.slide-info .s-title { font-size: .76rem; font-weight: 700; color: #fff; line-height: 1.25; margin-bottom: 5px; }
+.slide-info .s-prices { display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px; }
+.slide-info .s-orig  { font-size: .62rem; color: rgba(255,255,255,.38); text-decoration: line-through; }
+.slide-info .s-offer { font-size: .92rem; font-weight: 800; font-family: 'Poppins', sans-serif; }
+.slide-info .s-cta   {
+    display: block; text-align: center; padding: 4px 0; border-radius: 7px;
+    font-size: .6rem; font-weight: 700; letter-spacing: .5px;
+    background: rgba(255,255,255,.07); color: rgba(255,255,255,.5);
+    border: 1px solid rgba(255,255,255,.1);
+}
+
+/* Carousel dots */
+.carousel-dots { position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); display: flex; gap: 4px; z-index: 15; }
+.c-dot {
+    width: 14px; height: 3px; border-radius: 2px;
+    background: rgba(255,255,255,.25); cursor: pointer;
+    transition: background .3s, width .3s;
+}
+.c-dot.active { background: #fff; width: 22px; }
 
 /* Feature section */
 .features-section {
