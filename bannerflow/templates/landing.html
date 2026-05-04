@@ -144,75 +144,160 @@
                   </svg>
                 </div>
               </div>
-              <!-- App bar overlay -->
-              <div class="iphone-app-bar">
-                <span class="app-bar-title">BannerFlow</span>
-                <div class="app-bar-icons">
-                  <i class="bi bi-bell" style="font-size:.6rem;color:rgba(255,255,255,.5)"></i>
-                  <div class="app-bar-avatar">B</div>
-                </div>
-              </div>
+              <!-- App bar overlay — removed -->
               <!-- Carousel (fills full screen) -->
               <div class="mockup-carousel" id="heroCarousel">
                 <div class="carousel-track" id="heroTrack">
 
-                  <!-- Slide 1 — iPhone 15 Pro -->
+                  <!-- Slide 1 — iPhone Story -->
                   <div class="banner-slide slide-1">
-                    <div class="s-art" style="overflow:hidden;">
-                      <span class="s-badge">-25% OFF</span>
+                    <div class="s-art">
                       <img src="https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&fit=crop&q=85&auto=format"
-                           alt="iPhone 15 Pro" style="width:100%;height:100%;object-fit:cover;opacity:.88;">
+                           alt="iPhone 15 Pro" style="width:100%;height:100%;object-fit:cover;">
+                      <!-- Gradient overlay: dark top for status bar, strong bottom for info -->
+                      <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.45) 0%,transparent 30%,transparent 55%,rgba(0,0,0,.92) 100%);"></div>
                     </div>
-                    <div class="slide-info">
-                      <div class="s-row1"><span class="s-store" style="color:#ffe600;">MercadoLibre</span><span class="s-stars">★★★★★</span></div>
-                      <div class="s-title">iPhone 15 Pro 256GB Titanio Negro</div>
-                      <div class="s-prices"><span class="s-orig">$999.990</span><span class="s-offer" style="color:#0ea5e9;">$749.990</span></div>
-                      <span class="s-cta">Ver oferta →</span>
+                    <!-- Story top bar: avatar + username + close -->
+                    <div style="position:absolute;top:42px;left:0;right:0;z-index:6;padding:0 10px;display:flex;align-items:center;gap:6px;">
+                      <div style="width:22px;height:22px;border-radius:50%;border:1.5px solid #ffe600;background:linear-gradient(135deg,#ffe600,#f59e0b);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <span style="font-size:.45rem;font-weight:900;color:#0f172a;">ML</span>
+                      </div>
+                      <div style="flex:1;min-width:0;">
+                        <div style="font-size:.52rem;font-weight:700;color:#fff;line-height:1;">mercadolibre_cl</div>
+                        <div style="font-size:.42rem;color:rgba(255,255,255,.55);">Hace 2h · Publicidad</div>
+                      </div>
+                      <span style="font-size:.7rem;color:rgba(255,255,255,.5);line-height:1;">✕</span>
+                    </div>
+                    <!-- Story progress bars -->
+                    <div style="position:absolute;top:38px;left:8px;right:8px;z-index:7;display:flex;gap:2px;height:2px;">
+                      <div style="flex:1;background:rgba(255,255,255,.9);border-radius:2px;"></div>
+                      <div style="flex:1;background:rgba(255,255,255,.3);border-radius:2px;"></div>
+                      <div style="flex:1;background:rgba(255,255,255,.3);border-radius:2px;"></div>
+                      <div style="flex:1;background:rgba(255,255,255,.3);border-radius:2px;"></div>
+                    </div>
+                    <!-- Bottom info -->
+                    <div style="position:absolute;bottom:0;left:0;right:0;z-index:5;padding:10px 10px 22px;">
+                      <div style="font-size:.62rem;font-weight:800;color:rgba(255,255,255,.55);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;">MercadoLibre</div>
+                      <div style="font-size:.8rem;font-weight:800;color:#fff;line-height:1.2;margin-bottom:5px;">iPhone 15 Pro 256GB<br><span style="font-weight:400;font-size:.65rem;color:rgba(255,255,255,.6);">Titanio Negro · Garantía oficial</span></div>
+                      <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px;">
+                        <span style="font-size:.58rem;color:rgba(255,255,255,.4);text-decoration:line-through;">$999.990</span>
+                        <span style="font-size:1rem;font-weight:900;color:#fff;font-family:'Poppins',sans-serif;">$749.990</span>
+                        <span style="font-size:.55rem;font-weight:900;background:linear-gradient(135deg,#ffe600,#ffaa00);color:#0f172a;padding:2px 6px;border-radius:20px;line-height:1.4;">-25%</span>
+                      </div>
+                      <div style="background:linear-gradient(90deg,#0ea5e9,#7c3aed);border-radius:8px;padding:6px 0;text-align:center;">
+                        <span style="font-size:.62rem;font-weight:900;color:#fff;letter-spacing:.8px;">VER OFERTA →</span>
+                      </div>
                     </div>
                   </div>
 
-                  <!-- Slide 2 — Adidas Jacket -->
+                  <!-- Slide 2 — Adidas Story -->
                   <div class="banner-slide slide-2">
-                    <div class="shoe-wrap" style="overflow:hidden;">
-                      <span class="s-badge">-40% OFF</span>
+                    <div class="shoe-wrap">
                       <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&fit=crop&q=85&auto=format"
-                           alt="Adidas Jacket" style="width:100%;height:100%;object-fit:cover;opacity:.88;">
+                           alt="Adidas Jacket" style="width:100%;height:100%;object-fit:cover;">
+                      <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.45) 0%,transparent 30%,transparent 55%,rgba(0,0,0,.95) 100%);"></div>
                     </div>
-                    <div class="slide-info">
-                      <div class="s-row1"><span class="s-store" style="color:rgba(255,255,255,.8);">Adidas Chile</span><span class="s-stars">★★★★★</span></div>
-                      <div class="s-title">Chaqueta Adidas Essentials 3-Stripes</div>
-                      <div class="s-prices"><span class="s-orig">$79.990</span><span class="s-offer" style="color:#a3e635;">$47.990</span></div>
-                      <span class="s-cta">Ver oferta →</span>
+                    <div style="position:absolute;top:42px;left:0;right:0;z-index:6;padding:0 10px;display:flex;align-items:center;gap:6px;">
+                      <div style="width:22px;height:22px;border-radius:50%;border:1.5px solid #fff;background:#000;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <span style="font-size:.45rem;font-weight:900;color:#fff;">AD</span>
+                      </div>
+                      <div style="flex:1;">
+                        <div style="font-size:.52rem;font-weight:700;color:#fff;line-height:1;">adidas_cl</div>
+                        <div style="font-size:.42rem;color:rgba(255,255,255,.55);">Hace 4h · Publicidad</div>
+                      </div>
+                      <span style="font-size:.7rem;color:rgba(255,255,255,.5);">✕</span>
+                    </div>
+                    <div style="position:absolute;top:38px;left:8px;right:8px;z-index:7;display:flex;gap:2px;height:2px;">
+                      <div style="flex:1;background:rgba(255,255,255,.9);border-radius:2px;"></div>
+                      <div style="flex:1;background:rgba(255,255,255,.9);border-radius:2px;"></div>
+                      <div style="flex:1;background:rgba(255,255,255,.3);border-radius:2px;"></div>
+                      <div style="flex:1;background:rgba(255,255,255,.3);border-radius:2px;"></div>
+                    </div>
+                    <div style="position:absolute;bottom:0;left:0;right:0;z-index:5;padding:10px 10px 22px;">
+                      <div style="font-size:.62rem;font-weight:800;color:rgba(255,255,255,.55);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;">Adidas Chile</div>
+                      <div style="font-size:.8rem;font-weight:800;color:#fff;line-height:1.2;margin-bottom:5px;">Chaqueta Essentials<br><span style="font-weight:400;font-size:.65rem;color:rgba(255,255,255,.6);">3-Stripes · Unisex · Talle S-XL</span></div>
+                      <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px;">
+                        <span style="font-size:.58rem;color:rgba(255,255,255,.4);text-decoration:line-through;">$79.990</span>
+                        <span style="font-size:1rem;font-weight:900;color:#a3e635;font-family:'Poppins',sans-serif;">$47.990</span>
+                        <span style="font-size:.55rem;font-weight:900;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;padding:2px 6px;border-radius:20px;line-height:1.4;">-40%</span>
+                      </div>
+                      <div style="background:linear-gradient(90deg,#16a34a,#a3e635);border-radius:8px;padding:6px 0;text-align:center;">
+                        <span style="font-size:.62rem;font-weight:900;color:#fff;letter-spacing:.8px;">VER OFERTA →</span>
+                      </div>
                     </div>
                   </div>
 
-                  <!-- Slide 3 — AirPods Pro -->
+                  <!-- Slide 3 — AirPods Story -->
                   <div class="banner-slide slide-3">
-                    <div class="headphone-wrap" style="overflow:hidden;">
-                      <span class="s-badge">-22% OFF</span>
+                    <div class="headphone-wrap">
                       <img src="https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=400&fit=crop&q=85&auto=format"
-                           alt="AirPods Pro" style="width:100%;height:100%;object-fit:cover;opacity:.88;">
+                           alt="AirPods Pro" style="width:100%;height:100%;object-fit:cover;">
+                      <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.45) 0%,transparent 30%,transparent 55%,rgba(21,8,37,.97) 100%);"></div>
                     </div>
-                    <div class="slide-info">
-                      <div class="s-row1"><span class="s-store" style="color:#c4b5fd;">MercadoLibre</span><span class="s-stars">★★★★★</span></div>
-                      <div class="s-title">Apple AirPods Pro 2da Generación</div>
-                      <div class="s-prices"><span class="s-orig">$229.990</span><span class="s-offer" style="color:#c4b5fd;">$179.990</span></div>
-                      <span class="s-cta">Ver oferta →</span>
+                    <div style="position:absolute;top:42px;left:0;right:0;z-index:6;padding:0 10px;display:flex;align-items:center;gap:6px;">
+                      <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#f472b6);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <span style="font-size:.45rem;font-weight:900;color:#fff;">ML</span>
+                      </div>
+                      <div style="flex:1;">
+                        <div style="font-size:.52rem;font-weight:700;color:#fff;line-height:1;">mercadolibre_cl</div>
+                        <div style="font-size:.42rem;color:rgba(255,255,255,.55);">Hace 1h · Publicidad</div>
+                      </div>
+                      <span style="font-size:.7rem;color:rgba(255,255,255,.5);">✕</span>
+                    </div>
+                    <div style="position:absolute;top:38px;left:8px;right:8px;z-index:7;display:flex;gap:2px;height:2px;">
+                      <div style="flex:1;background:rgba(255,255,255,.9);border-radius:2px;"></div>
+                      <div style="flex:1;background:rgba(255,255,255,.9);border-radius:2px;"></div>
+                      <div style="flex:1;background:rgba(255,255,255,.9);border-radius:2px;"></div>
+                      <div style="flex:1;background:rgba(255,255,255,.3);border-radius:2px;"></div>
+                    </div>
+                    <div style="position:absolute;bottom:0;left:0;right:0;z-index:5;padding:10px 10px 22px;">
+                      <div style="font-size:.62rem;font-weight:800;color:rgba(196,181,253,.7);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;">MercadoLibre</div>
+                      <div style="font-size:.8rem;font-weight:800;color:#fff;line-height:1.2;margin-bottom:5px;">AirPods Pro 2da Gen<br><span style="font-weight:400;font-size:.65rem;color:rgba(255,255,255,.6);">USB-C · Cancelación activa ruido</span></div>
+                      <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px;">
+                        <span style="font-size:.58rem;color:rgba(255,255,255,.4);text-decoration:line-through;">$229.990</span>
+                        <span style="font-size:1rem;font-weight:900;color:#c4b5fd;font-family:'Poppins',sans-serif;">$179.990</span>
+                        <span style="font-size:.55rem;font-weight:900;background:linear-gradient(135deg,#c026d3,#f472b6);color:#fff;padding:2px 6px;border-radius:20px;line-height:1.4;">-22%</span>
+                      </div>
+                      <div style="background:linear-gradient(90deg,#7c3aed,#f472b6);border-radius:8px;padding:6px 0;text-align:center;">
+                        <span style="font-size:.62rem;font-weight:900;color:#fff;letter-spacing:.8px;">VER OFERTA →</span>
+                      </div>
                     </div>
                   </div>
 
-                  <!-- Slide 4 — PS5 -->
+                  <!-- Slide 4 — PS5 Story -->
                   <div class="banner-slide slide-4">
-                    <div class="laptop-wrap" style="overflow:hidden;">
-                      <span class="s-badge">-20% OFF</span>
+                    <div class="laptop-wrap">
                       <img src="https://images.unsplash.com/photo-1607853202273-797f1c22a38e?w=400&fit=crop&q=85&auto=format"
-                           alt="PlayStation 5" style="width:100%;height:100%;object-fit:cover;opacity:.88;">
+                           alt="PlayStation 5" style="width:100%;height:100%;object-fit:cover;">
+                      <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.45) 0%,transparent 30%,transparent 55%,rgba(1,26,16,.97) 100%);"></div>
                     </div>
-                    <div class="slide-info">
-                      <div class="s-row1"><span class="s-store" style="color:#7bc740;">Sodimac</span><span class="s-stars">★★★★★</span></div>
-                      <div class="s-title">PlayStation 5 Slim + 2 Controles</div>
-                      <div class="s-prices"><span class="s-orig">$649.990</span><span class="s-offer" style="color:#7bc740;">$519.990</span></div>
-                      <span class="s-cta">Ver oferta →</span>
+                    <div style="position:absolute;top:42px;left:0;right:0;z-index:6;padding:0 10px;display:flex;align-items:center;gap:6px;">
+                      <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#4d7c0f,#7bc740);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <span style="font-size:.42rem;font-weight:900;color:#fff;">SD</span>
+                      </div>
+                      <div style="flex:1;">
+                        <div style="font-size:.52rem;font-weight:700;color:#fff;line-height:1;">sodimac_cl</div>
+                        <div style="font-size:.42rem;color:rgba(255,255,255,.55);">Hace 6h · Publicidad</div>
+                      </div>
+                      <span style="font-size:.7rem;color:rgba(255,255,255,.5);">✕</span>
+                    </div>
+                    <div style="position:absolute;top:38px;left:8px;right:8px;z-index:7;display:flex;gap:2px;height:2px;">
+                      <div style="flex:1;background:rgba(255,255,255,.9);border-radius:2px;"></div>
+                      <div style="flex:1;background:rgba(255,255,255,.9);border-radius:2px;"></div>
+                      <div style="flex:1;background:rgba(255,255,255,.9);border-radius:2px;"></div>
+                      <div style="flex:1;background:rgba(255,255,255,.9);border-radius:2px;"></div>
+                    </div>
+                    <div style="position:absolute;bottom:0;left:0;right:0;z-index:5;padding:10px 10px 22px;">
+                      <div style="font-size:.62rem;font-weight:800;color:rgba(123,199,64,.7);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;">Sodimac</div>
+                      <div style="font-size:.8rem;font-weight:800;color:#fff;line-height:1.2;margin-bottom:5px;">PlayStation 5 Slim<br><span style="font-weight:400;font-size:.65rem;color:rgba(255,255,255,.6);">+ 2 Controles DualSense · Físico</span></div>
+                      <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px;">
+                        <span style="font-size:.58rem;color:rgba(255,255,255,.4);text-decoration:line-through;">$649.990</span>
+                        <span style="font-size:1rem;font-weight:900;color:#7bc740;font-family:'Poppins',sans-serif;">$519.990</span>
+                        <span style="font-size:.55rem;font-weight:900;background:linear-gradient(135deg,#4d7c0f,#7bc740);color:#fff;padding:2px 6px;border-radius:20px;line-height:1.4;">-20%</span>
+                      </div>
+                      <div style="background:linear-gradient(90deg,#4d7c0f,#7bc740);border-radius:8px;padding:6px 0;text-align:center;">
+                        <span style="font-size:.62rem;font-weight:900;color:#fff;letter-spacing:.8px;">VER OFERTA →</span>
+                      </div>
                     </div>
                   </div>
 
