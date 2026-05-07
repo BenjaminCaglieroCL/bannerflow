@@ -1,118 +1,220 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Configuración de Afiliado — BannerFlow{% endblock %}
+{% block title %}Afiliado — BannerFlow{% endblock %}
 
 {% block content %}
-<div class="container py-5" style="max-width: 760px;">
+<div class="aff-page">
 
-    <div class="mb-4">
-        <h2 class="fw-bold">
-            <i class="bi bi-link-45deg text-gradient me-2"></i>Configuración de Afiliado
-        </h2>
-        <p class="text-muted">
-            Configura tus links de afiliado para que el generador los limpie automáticamente
-            y extraiga sólo la URL real del producto.
-        </p>
+  <!-- ── Hero ── -->
+  <div class="aff-hero">
+    <h1>Configuración de Afiliado</h1>
+    <p>
+      Si generas banners con links de afiliado (Awin para Adidas, o Sodimac),
+      guarda aquí tu código para que el generador los limpie automáticamente y
+      extraiga siempre la URL real del producto.
+    </p>
+  </div>
+
+  <!-- ── How it works ── -->
+  <div class="how-strip">
+    <div class="how-step">
+      <div class="how-step-num">1</div>
+      <p><strong>Pegas tu link</strong> de afiliado en el generador</p>
+    </div>
+    <div class="how-arrow"><i class="bi bi-arrow-right"></i></div>
+    <div class="how-step">
+      <div class="how-step-num">2</div>
+      <p>El sistema <strong>detecta</strong> la parte afiliada usando tu configuración</p>
+    </div>
+    <div class="how-arrow"><i class="bi bi-arrow-right"></i></div>
+    <div class="how-step">
+      <div class="how-step-num">3</div>
+      <p>Extrae datos del <strong>producto real</strong> sin rastro de afiliado</p>
+    </div>
+    <div class="how-arrow"><i class="bi bi-arrow-right"></i></div>
+    <div class="how-step">
+      <div class="how-step-num">4</div>
+      <p>Tu banner se genera <strong>correctamente</strong> con título, imagen y precios</p>
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <!-- ══════════════════ ADIDAS / AWIN ══════════════════ -->
+    <div class="store-card">
+      <div class="store-card-header">
+        <div class="store-logo-wrap" style="background:#000; padding: 8px 14px;">
+          <img src="https://res.cloudinary.com/db0zskqzs/image/upload/v1777869889/descargar_1_rwhc87.png" alt="Adidas">
+        </div>
+        <div class="store-card-header-text">
+          <h4>
+            Adidas <span style="color:#a78bfa; font-weight:500;">via Awin</span>
+            {% if profile.awin_prefix %}<span class="aff-configured-badge"><i class="bi bi-check-circle-fill"></i> Configurado</span>{% endif %}
+          </h4>
+          <span>El prefijo de afiliado va al <strong style="color:var(--text-primary);">inicio</strong> del link</span>
+        </div>
+      </div>
+
+      <div class="store-card-body">
+
+        <div class="mini-steps">
+          <div class="mini-step">
+            <div class="mini-step-num">1</div>
+            <div class="mini-step-text">
+              Cuando te registras en Awin, te entregan un link como este para cada producto:
+            </div>
+          </div>
+        </div>
+
+        <div class="example-pair">
+          <div class="example-block">
+            <div class="ex-label">Link completo de Awin (lo que copias)</div>
+            <code><span style="color:#c4b5fd;">https://www.awin1.com/cread.php?awinmid=79922&amp;awinaffid=1674245&amp;ued=https%3A%2F%2F</span>www.adidas.cl%2Fzapatillas%2FIH1443.html</code>
+          </div>
+        </div>
+
+        <div class="mini-steps">
+          <div class="mini-step">
+            <div class="mini-step-num">2</div>
+            <div class="mini-step-text">
+              La URL real del producto está <strong>codificada al final</strong>, después de <code style="color:#c4b5fd; background:rgba(124,58,237,.15); padding:1px 5px; border-radius:4px;">ued=https%3A%2F%2F</code>.
+              Copia y guarda <strong>todo lo que va antes de la URL del producto</strong>:
+            </div>
+          </div>
+        </div>
+
+        <div class="example-pair">
+          <div class="example-block is-result">
+            <div class="ex-label">Prefijo a guardar aquí ↓</div>
+            <code style="color:#c4b5fd;">https://www.awin1.com/cread.php?awinmid=79922&amp;awinaffid=1674245&amp;ued=https%3A%2F%2F</code>
+          </div>
+        </div>
+
+        <div class="aff-field-wrap">
+          <div class="aff-field-label">
+            <i class="bi bi-clipboard-fill"></i> Tu prefijo Awin
+          </div>
+          <input
+            type="text"
+            name="awin_prefix"
+            class="aff-input{% if profile.awin_prefix %} aff-input--set{% endif %}"
+            placeholder="https://www.awin1.com/cread.php?awinmid=...&ued=https%3A%2F%2F"
+            value="{{ profile.awin_prefix }}"
+          >
+          {% if profile.awin_prefix %}
+          <p class="aff-hint aff-hint--ok">
+            <i class="bi bi-check2-circle"></i>
+            Prefijo guardado — el generador limpiará los links de Adidas automáticamente.
+          </p>
+          {% else %}
+          <p class="aff-hint">
+            <i class="bi bi-info-circle"></i>
+            Déjalo vacío si no tienes afiliado Awin/Adidas.
+          </p>
+          {% endif %}
+        </div>
+
+      </div>
     </div>
 
-    <form method="post">
-        {% csrf_token %}
+    <!-- ══════════════════ SODIMAC ══════════════════ -->
+    <div class="store-card">
+      <div class="store-card-header">
+        <div class="store-logo-wrap" style="background:#fff; padding: 6px 10px;">
+          <img src="https://www.seekpng.com/png/full/322-3225648_sodimac-homecenter-logo-png-transparent-sodimac-logo-png.png" alt="Sodimac">
+        </div>
+        <div class="store-card-header-text">
+          <h4>
+            Sodimac
+            {% if profile.sodimac_suffix_trigger %}<span class="aff-configured-badge"><i class="bi bi-check-circle-fill"></i> Configurado</span>{% endif %}
+          </h4>
+          <span>El sufijo de afiliado va al <strong style="color:var(--text-primary);">final</strong> del link</span>
+        </div>
+      </div>
 
-        <!-- ── Awin / Adidas ── -->
-        <div class="card-custom p-4 mb-4">
-            <h5 class="fw-bold mb-1">
-                <i class="bi bi-bag-check me-2 text-primary"></i>Adidas (Awin)
-            </h5>
-            <p class="text-muted small mb-3">
-                El link de afiliado Awin se encuentra al <strong>principio</strong> del enlace.
-                Copia la parte del link que aparece <em>antes</em> de la URL del producto.<br>
-                <span class="text-warning">
-                    Ejemplo completo:<br>
-                    <code>https://www.awin1.com/cread.php?awinmid=79922&awinaffid=1674245&ued=https%3A%2F%2Fwww.adidas.cl%2F...</code>
-                </span><br>
-                <span class="text-info">
-                    Prefijo a guardar:<br>
-                    <code>https://www.awin1.com/cread.php?awinmid=79922&awinaffid=1674245&ued=https%3A%2F%2F</code>
-                </span>
-            </p>
-            <label for="awin_prefix" class="form-label fw-semibold">Prefijo Awin</label>
-            <input
-                type="text"
-                id="awin_prefix"
-                name="awin_prefix"
-                class="form-control bg-dark text-white border-secondary"
-                placeholder="https://www.awin1.com/cread.php?awinmid=...&ued=https%3A%2F%2F"
-                value="{{ profile.awin_prefix }}"
-            >
-            <div class="form-text text-muted mt-1">
-                Déjalo vacío si no usas links de afiliado Awin.
+      <div class="store-card-body">
+
+        <div class="mini-steps">
+          <div class="mini-step">
+            <div class="mini-step-num">1</div>
+            <div class="mini-step-text">
+              En Sodimac, el código de afiliado se agrega como parámetro al <strong>final</strong> de la URL del producto:
             </div>
+          </div>
         </div>
 
-        <!-- ── Sodimac ── -->
-        <div class="card-custom p-4 mb-4">
-            <h5 class="fw-bold mb-1">
-                <i class="bi bi-hammer me-2 text-warning"></i>Sodimac
-            </h5>
-            <p class="text-muted small mb-3">
-                El link de afiliado Sodimac se añade al <strong>final</strong> del enlace.
-                Copia el inicio de la parte afiliada (el separador que marca dónde empieza).<br>
-                <span class="text-warning">
-                    Ejemplo completo:<br>
-                    <code>https://www.sodimac.cl/.../121227892?eid=666_campaign=trends_usr=9iw92e</code>
-                </span><br>
-                <span class="text-info">
-                    Sufijo a guardar: <code>?eid=</code>
-                </span>
-            </p>
-            <label for="sodimac_suffix_trigger" class="form-label fw-semibold">Inicio del sufijo Sodimac</label>
-            <input
-                type="text"
-                id="sodimac_suffix_trigger"
-                name="sodimac_suffix_trigger"
-                class="form-control bg-dark text-white border-secondary"
-                placeholder="?eid="
-                value="{{ profile.sodimac_suffix_trigger }}"
-            >
-            <div class="form-text text-muted mt-1">
-                Normalmente es <code>?eid=</code>. Déjalo vacío si no usas links de afiliado Sodimac.
+        <div class="example-pair">
+          <div class="example-block">
+            <div class="ex-label">Link completo con afiliado</div>
+            <code>https://www.sodimac.cl/sodimac-cl/articulo/121227892/producto-ejemplo<span style="color:#fb923c;">?eid=666_campaign=trends_usr=9iw92e</span></code>
+          </div>
+        </div>
+
+        <div class="mini-steps">
+          <div class="mini-step">
+            <div class="mini-step-num">2</div>
+            <div class="mini-step-text">
+              Todo lo que viene desde <code style="color:#fb923c; background:rgba(251,146,60,.12); padding:1px 5px; border-radius:4px;">?eid=</code> en adelante es el código de afiliado.
+              Guarda el <strong>inicio de esa parte</strong> para que el sistema sepa dónde cortar:
             </div>
+          </div>
         </div>
 
-        <div class="d-flex gap-3">
-            <button type="submit" class="btn btn-gradient px-4">
-                <i class="bi bi-floppy me-1"></i>Guardar configuración
-            </button>
-            <a href="{% url 'banners:home' %}" class="btn btn-outline-secondary">
-                Cancelar
-            </a>
+        <div class="example-pair">
+          <div class="example-block is-result" style="border-left-color:#fb923c;">
+            <div class="ex-label" style="color:#fdba74;">Sufijo a guardar aquí ↓</div>
+            <code style="color:#fed7aa;">?eid=</code>
+          </div>
         </div>
-    </form>
 
-    <!-- Info box -->
-    <div class="card-custom p-4 mt-5 border border-secondary">
-        <h6 class="fw-bold mb-2">
-            <i class="bi bi-info-circle text-info me-2"></i>¿Cómo funciona?
-        </h6>
-        <ul class="text-muted small mb-0">
-            <li class="mb-1">
-                Al pegar un link en el generador, el sistema detecta automáticamente si tiene
-                una parte de afiliado.
-            </li>
-            <li class="mb-1">
-                Si el link coincide con tu configuración, se limpia y se usa la URL real del
-                producto para extraer sus datos.
-            </li>
-            <li class="mb-1">
-                Si el link tiene una parte de afiliado que <em>no coincide</em> con lo que
-                guardaste aquí, verás una advertencia (el producto se extrae de todas formas).
-            </li>
-            <li>
-                Si no tienes links de afiliado, puedes dejar ambos campos vacíos.
-            </li>
-        </ul>
+        <div class="aff-field-wrap">
+          <div class="aff-field-label">
+            <i class="bi bi-scissors"></i> Inicio del sufijo Sodimac
+          </div>
+          <input
+            type="text"
+            name="sodimac_suffix_trigger"
+            class="aff-input{% if profile.sodimac_suffix_trigger %} aff-input--set{% endif %}"
+            placeholder="?eid="
+            value="{{ profile.sodimac_suffix_trigger }}"
+          >
+          {% if profile.sodimac_suffix_trigger %}
+          <p class="aff-hint aff-hint--ok">
+            <i class="bi bi-check2-circle"></i>
+            Sufijo guardado — el generador limpiará los links de Sodimac automáticamente.
+          </p>
+          {% else %}
+          <p class="aff-hint">
+            <i class="bi bi-info-circle"></i>
+            Normalmente es <code style="color:#fb923c; background:rgba(251,146,60,.12); padding:1px 5px; border-radius:4px;">?eid=</code>. Déjalo vacío si no tienes afiliado Sodimac.
+          </p>
+          {% endif %}
+        </div>
+
+      </div>
     </div>
+
+    <!-- ── Actions ── -->
+    <div class="aff-actions">
+      <button type="submit" class="btn-gradient">
+        <i class="bi bi-floppy me-1"></i>Guardar configuración
+      </button>
+      <a href="{% url 'banners:home' %}" class="btn-cancel">Cancelar</a>
+    </div>
+  </form>
+
+  <!-- ── Info box ── -->
+  <div class="aff-info">
+    <h6><i class="bi bi-lightbulb-fill me-2"></i>Resumen rápido</h6>
+    <ul>
+      <li>El generador detecta automáticamente si pegaste un link con afiliado.</li>
+      <li>Si coincide con tu configuración, limpia el link y extrae el producto correctamente.</li>
+      <li>Si hay una parte afiliada que <em>no coincide</em> con lo guardado, verás una advertencia amarilla (el producto se extrae de todas formas).</li>
+      <li>Si no usas links de afiliado, deja ambos campos vacíos — el generador funcionará igual con links normales.</li>
+    </ul>
+  </div>
 
 </div>
 {% endblock %}
