@@ -35,6 +35,8 @@ def scrape_url(url):
         return scrape_falabella(url)
     elif 'sodimac' in domain or 'homecenter' in domain:
         return scrape_sodimac(url)
+    elif 'adidas' in domain:
+        return scrape_adidas(url)
     else:
         return scrape_generic(url)
 
@@ -118,18 +120,182 @@ def _extract_og(soup):
 
 def _extract_jsonld(soup):
     """Extract JSON-LD Product structured data from the page (most reliable source)."""
+    def find_product(obj):
+        if isinstance(obj, dict):
+            typ = obj.get('@type')
+            if isinstance(typ, list) and 'Product' in typ:
+                return obj
+            if typ == 'Product':
+                return obj
+            for key in ('@graph', 'mainEntity', 'itemListElement'):
+                if key in obj:
+                    found = find_product(obj[key])
+                    if found:
+                        return found
+            for value in obj.values():
+                found = find_product(value)
+                if found:
+                    return found
+        elif isinstance(obj, list):
+            for item in obj:
+                found = find_product(item)
+                if found:
+                    return found
+        return None
+
     for script in soup.find_all('script', type='application/ld+json'):
         try:
             payload = json.loads(script.string or '')
-            if isinstance(payload, list):
-                for item in payload:
-                    if isinstance(item, dict) and item.get('@type') == 'Product':
-                        return item
-            elif isinstance(payload, dict) and payload.get('@type') == 'Product':
-                return payload
+            found = find_product(payload)
+            if found:
+                return found
         except (json.JSONDecodeError, AttributeError):
             continue
     return None
+
+
+def _extract_adidas_sku(url):
+    """Extract product SKU/code from Adidas product URLs."""
+    path = urlparse(url).path
+    m = re.search(r'/([A-Za-z0-9]{5,})\.html$', path)
+    return m.group(1).upper() if m else ''
+
+
+def _is_adidas_blocked_page(soup):
+    """Detect anti-bot/challenge pages returned by adidas.cl."""
+    page_text = soup.get_text(' ', strip=True).lower()
+    block_markers = [
+        'unfortunately we are unable to give you access',
+        'access denied',
+        'powered and protected by',
+    ]
+    return any(marker in page_text for marker in block_markers)
+
+
+def _scrape_adidas_via_jina(url):
+    """Fallback scraper using r.jina.ai mirror when adidas.cl blocks direct requests."""
+    mirror_url = 'https://r.jina.ai/http://' + url.replace('https://', '').replace('http://', '')
+    resp = requests.get(mirror_url, headers=HEADERS, timeout=40)
+    resp.raise_for_status()
+    text = resp.text
+
+    sku = _extract_adidas_sku(url)
+    data = {
+        'store_name': 'Adidas',
+        'store_logo': 'adidas',
+        'source_url': url,
+    }
+
+    # Title (from mirror preamble or markdown H1)
+    title_match = re.search(r'^Title:\s*(.+)$', text, flags=re.MULTILINE)
+    if title_match:
+        title = title_match.group(1).strip()
+        title = re.sub(r'\s*\|\s*adidas\s+chile\s*$', '', title, flags=re.I)
+        data['title'] = title
+    else:
+        h1_match = re.search(r'^#\s+(.+)$', text, flags=re.MULTILINE)
+        if h1_match:
+            data['title'] = h1_match.group(1).strip()
+
+    # Focus extraction around the SKU to avoid grabbing related-product data.
+    work_text = text
+    if sku:
+        idx = text.upper().find(sku)
+        if idx != -1:
+            work_text = text[max(0, idx - 1000):idx + 5000]
+
+    # Product image URL from assets.adidas.com containing the target SKU.
+    image_url = ''
+    image_pattern = r'https://assets\.adidas\.com/images/[^\s\)\]]+'
+    candidates = re.findall(image_pattern, work_text)
+    if not candidates:
+        candidates = re.findall(image_pattern, text)
+
+    filtered = []
+    for c in candidates:
+        cu = c.lower()
+        if sku and sku.lower() not in cu:
+            continue
+        if 'video' in cu:
+            continue
+        if 'hover' in cu:
+            continue
+        filtered.append(c)
+
+    if filtered:
+        preferred = [c for c in filtered if '_hm1' in c.lower() or '_00_plp_standard' in c.lower()]
+        image_url = preferred[0] if preferred else filtered[0]
+
+    if image_url:
+        data['image_url'] = image_url
+
+    price_scope_text = text
+    if data.get('title'):
+        base_title = data['title'].split(' - ')[0].strip()
+        if base_title:
+            heading_pat = re.compile(r'\n#\s+' + re.escape(base_title) + r'\b', flags=re.I)
+            heading_matches = list(heading_pat.finditer(text))
+            if heading_matches:
+                start_idx = heading_matches[-1].start()
+                price_scope_text = text[start_idx:start_idx + 2500]
+
+    m_install = re.search(r'Hasta\s*(\d+)\s*x\s*\*\*\$\s*([\d\.,]+)', price_scope_text, flags=re.I)
+
+    # Prices: parse the main PDP price block close to the installment block.
+    if m_install:
+        idx = m_install.start()
+        window = price_scope_text[max(0, idx - 1400):idx + 200]
+        m_main = re.search(
+            r'Precio de venta\s*\$\s*([\d\.]+)\s*\$\s*([\d\.]+)\s*Precio\s+original',
+            window,
+            flags=re.I,
+        )
+        if m_main:
+            data['offer_price'] = _clean_price(m_main.group(1))
+            data['original_price'] = _clean_price(m_main.group(2))
+
+    # If the main block wasn't found, infer offer price from installments.
+    if not data.get('offer_price') and m_install:
+        try:
+            n = int(m_install.group(1))
+            per_installment = float(m_install.group(2).replace('.', '').replace(',', '.'))
+            data['offer_price'] = int(round(n * per_installment))
+        except (TypeError, ValueError):
+            pass
+
+    # If original wasn't found, try nearest "Precio original" amount around installments.
+    if data.get('offer_price') and not data.get('original_price') and m_install:
+        idx = m_install.start()
+        window = price_scope_text[max(0, idx - 1400):idx + 200]
+        m_orig = re.search(r'\$\s*([\d\.]+)\s*Precio\s+original', window, flags=re.I)
+        if m_orig:
+            data['original_price'] = _clean_price(m_orig.group(1))
+
+    # Prices: additional fallback parsing around SKU context.
+    raw_prices = re.findall(r'\$\s*([\d][\d\.]*)', work_text)
+    prices = []
+    for raw in raw_prices:
+        try:
+            prices.append(int(raw.replace('.', '')))
+        except ValueError:
+            continue
+
+    # Keep order while deduplicating
+    seen = set()
+    ordered = []
+    for p in prices:
+        if p not in seen:
+            seen.add(p)
+            ordered.append(p)
+
+    if ordered and not data.get('offer_price'):
+        data['offer_price'] = ordered[0]
+        data['original_price'] = ordered[1] if len(ordered) > 1 else ordered[0]
+
+    if data.get('offer_price') and not data.get('original_price'):
+        data['original_price'] = data['offer_price']
+
+    return data
 
 
 # --- MercadoLibre ---
@@ -306,6 +472,104 @@ def scrape_falabella(url):
 
     return data
 
+
+# --- Adidas ---
+
+def scrape_adidas(url):
+    """Scrape Adidas product pages using JSON-LD schema and DOM selectors."""
+    soup = _get_soup_playwright(url, wait_selector='h1', timeout=20000)
+    data = {
+        'store_name': 'Adidas',
+        'store_logo': 'adidas',
+        'source_url': url,
+    }
+
+    # If adidas challenge page is returned, fallback to mirror extraction.
+    if _is_adidas_blocked_page(soup):
+        return _scrape_adidas_via_jina(url)
+
+    # 1. Title — prefer h1, fallback to meta title
+    h1 = soup.find('h1')
+    data['title'] = h1.get_text(strip=True) if h1 else ''
+
+    # 2. Image — prefer JSON-LD first, then look for product image in DOM
+    jsonld = _extract_jsonld(soup)
+    
+    if jsonld:
+        images = jsonld.get('image', [])
+        img_url = (images[0] if isinstance(images, list) else images) or ''
+        # Ensure it's a proper URL (not a relative path)
+        if img_url and not img_url.startswith('http'):
+            img_url = 'https:' + img_url if img_url.startswith('//') else img_url
+        data['image_url'] = img_url
+    
+    # Fallback: look for product image in DOM (common patterns in Adidas)
+    if not data.get('image_url'):
+        # Try common Adidas image patterns
+        img = soup.find('img', src=re.compile(r'(product|shoe|item)', re.I))
+        if not img:
+            img = soup.find('img', class_=re.compile(r'(product|main|primary|hero)', re.I))
+        if not img:
+            # Last resort: any img that's not too small
+            for candidate in soup.find_all('img', limit=20):
+                src = candidate.get('src', '')
+                if src and 'logo' not in src.lower() and 'icon' not in src.lower():
+                    img = candidate
+                    break
+        
+        if img:
+            src = img.get('src', '')
+            if src and not src.startswith('http'):
+                src = 'https:' + src if src.startswith('//') else src
+            data['image_url'] = src
+    
+    # Fallback to Open Graph
+    if not data.get('image_url'):
+        og = _extract_og(soup)
+        data['image_url'] = og.get('image_url', '')
+
+    # 3 & 4. Prices — Extract from JSON-LD (most reliable for Adidas)
+    if jsonld:
+        offers = jsonld.get('offers', {})
+        if isinstance(offers, list):
+            offers = offers[0] if offers else {}
+        
+        price = offers.get('price')
+        if price:
+            data['offer_price'] = _clean_price(str(price))
+    
+    # Fallback: look for prices in DOM
+    if not data.get('offer_price'):
+        # Adidas typically uses specific price containers; look for them
+        price_patterns = soup.find_all(string=re.compile(r'\$[\d.,\s]+'))
+        prices = []
+        for p in price_patterns:
+            val = _clean_price(p)
+            if val and isinstance(val, int):
+                prices.append(val)
+        
+        if prices:
+            prices.sort(reverse=True)
+            data['offer_price'] = prices[0]
+    
+    # Adidas doesn't typically show original/discounted prices separately
+    # Set original price same as offer price (or keep as fallback)
+    if not data.get('original_price'):
+        data['original_price'] = data.get('offer_price')
+    if not data.get('offer_price'):
+        data['offer_price'] = data.get('original_price')
+
+    # Final fallback in case adidas blocks some sessions and critical fields are missing.
+    if not data.get('title') or not data.get('image_url') or not data.get('offer_price'):
+        try:
+            mirror_data = _scrape_adidas_via_jina(url)
+            for key in ('title', 'image_url', 'offer_price', 'original_price'):
+                if not data.get(key) and mirror_data.get(key):
+                    data[key] = mirror_data[key]
+        except Exception:
+            pass
+
+    return data
 
 
 # --- Generic / Fallback ---

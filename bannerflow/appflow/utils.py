@@ -1,6 +1,89 @@
-"""Thumbnail generation for BannerTemplate using Pillow."""
+"""Utilities: affiliate URL cleaning + thumbnail generation for BannerTemplate."""
 import io
 import re
+from urllib.parse import urlparse, parse_qs, unquote
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Affiliate URL helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+def clean_affiliate_url(url, profile=None):
+    """
+    Detect and strip affiliate tracking from a URL.
+
+    Supports:
+    - Awin (prefix): URL starts with awin1.com, real product URL is in the
+      ``ued`` query parameter URL-encoded.
+    - Sodimac (suffix): URL contains a ``?eid=`` suffix appended to the
+      product URL.
+
+    Returns:
+        (clean_url: str, warning: str|None)
+        ``warning`` is a human-readable Spanish message when a mismatch is
+        detected between the URL and the user's saved configuration.
+    """
+    if not url:
+        return url, None
+
+    parsed = urlparse(url)
+
+    # --- Awin / Adidas prefix ---
+    if 'awin1.com' in (parsed.netloc or ''):
+        qs = parse_qs(parsed.query)
+        ued_values = qs.get('ued', [])
+        if ued_values:
+            clean_url = unquote(ued_values[0])
+            warning = None
+            if profile is not None:
+                saved = (profile.awin_prefix or '').strip()
+                if not saved:
+                    warning = (
+                        'Se detectó un enlace de afiliado Awin, pero no tienes '
+                        'configurado un prefijo Awin en tu perfil de afiliado.'
+                    )
+                elif not url.startswith(saved):
+                    warning = (
+                        'El enlace Awin no coincide con el prefijo guardado en tu '
+                        'configuración de afiliado. El producto se extrajo de todas formas.'
+                    )
+            return clean_url, warning
+        # Awin URL but no 'ued' param — can't extract product URL
+        return url, 'Se detectó un enlace Awin pero no se pudo extraer la URL del producto.'
+
+    # --- Sodimac suffix ---
+    if 'sodimac.cl' in (parsed.netloc or ''):
+        # Find where the affiliate suffix starts.  Use configured trigger if
+        # available, otherwise fall back to the standard '?eid=' marker.
+        trigger = None
+        if profile is not None:
+            trigger = (profile.sodimac_suffix_trigger or '').strip() or None
+
+        # Determine the index at which the affiliate suffix begins.
+        cut_index = None
+        if trigger and trigger in url:
+            cut_index = url.index(trigger)
+        elif '?eid=' in url:
+            cut_index = url.index('?eid=')
+
+        if cut_index is not None:
+            clean_url = url[:cut_index]
+            warning = None
+            if profile is not None:
+                saved_trigger = (profile.sodimac_suffix_trigger or '').strip()
+                if not saved_trigger:
+                    warning = (
+                        'Se detectó un enlace de afiliado Sodimac, pero no tienes '
+                        'configurado un sufijo Sodimac en tu perfil de afiliado.'
+                    )
+                elif saved_trigger not in url:
+                    warning = (
+                        'El sufijo de afiliado Sodimac no coincide con el guardado en '
+                        'tu configuración. El producto se extrajo de todas formas.'
+                    )
+            return clean_url, warning
+
+    return url, None
 
 from django.core.files.base import ContentFile
 

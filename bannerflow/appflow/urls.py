@@ -23,6 +23,9 @@ urlpatterns = [
     # Contact (public)
     path('contact/', views.contact, name='contact'),
 
+    # Affiliate settings
+    path('affiliate/', views.affiliate_settings, name='affiliate-settings'),
+
     # API
     path('api/templates/', views.TemplateListCreate.as_view(), name='api-templates'),
     path('api/templates/<int:pk>/', views.TemplateDetail.as_view(), name='api-template-detail'),

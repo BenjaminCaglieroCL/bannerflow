@@ -11,9 +11,10 @@ from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import BannerTemplate
+from .models import BannerTemplate, UserProfile
 from .serializers import BannerTemplateSerializer
 from .scrapers import scrape_url
+from .utils import clean_affiliate_url
 
 
 def _templates_json(queryset):
@@ -141,14 +142,32 @@ def scrape_product(request):
             {'error': 'Se requiere una URL'},
             status=status.HTTP_400_BAD_REQUEST
         )
+    profile = getattr(request.user, 'userprofile', None)
+    clean_url, affiliate_warning = clean_affiliate_url(url, profile)
     try:
-        data = scrape_url(url)
+        data = scrape_url(clean_url)
+        if affiliate_warning:
+            data['affiliate_warning'] = affiliate_warning
         return Response(data)
     except Exception as e:
         return Response(
             {'error': f'Error al extraer datos: {str(e)}'},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+
+# --- Affiliate settings ---
+
+@login_required
+def affiliate_settings(request):
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    if request.method == 'POST':
+        profile.awin_prefix = request.POST.get('awin_prefix', '').strip()
+        profile.sodimac_suffix_trigger = request.POST.get('sodimac_suffix_trigger', '').strip()
+        profile.save()
+        messages.success(request, 'Configuración de afiliado guardada correctamente.')
+        return redirect('banners:affiliate-settings')
+    return render(request, 'banners/affiliate.html', {'profile': profile})
 
 
 # --- Admin: user management ---

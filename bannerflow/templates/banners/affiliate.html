@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Configuración de Afiliado — BannerFlow{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width: 760px;">
+
+    <div class="mb-4">
+        <h2 class="fw-bold">
+            <i class="bi bi-link-45deg text-gradient me-2"></i>Configuración de Afiliado
+        </h2>
+        <p class="text-muted">
+            Configura tus links de afiliado para que el generador los limpie automáticamente
+            y extraiga sólo la URL real del producto.
+        </p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <!-- ── Awin / Adidas ── -->
+        <div class="card-custom p-4 mb-4">
+            <h5 class="fw-bold mb-1">
+                <i class="bi bi-bag-check me-2 text-primary"></i>Adidas (Awin)
+            </h5>
+            <p class="text-muted small mb-3">
+                El link de afiliado Awin se encuentra al <strong>principio</strong> del enlace.
+                Copia la parte del link que aparece <em>antes</em> de la URL del producto.<br>
+                <span class="text-warning">
+                    Ejemplo completo:<br>
+                    <code>https://www.awin1.com/cread.php?awinmid=79922&awinaffid=1674245&ued=https%3A%2F%2Fwww.adidas.cl%2F...</code>
+                </span><br>
+                <span class="text-info">
+                    Prefijo a guardar:<br>
+                    <code>https://www.awin1.com/cread.php?awinmid=79922&awinaffid=1674245&ued=https%3A%2F%2F</code>
+                </span>
+            </p>
+            <label for="awin_prefix" class="form-label fw-semibold">Prefijo Awin</label>
+            <input
+                type="text"
+                id="awin_prefix"
+                name="awin_prefix"
+                class="form-control bg-dark text-white border-secondary"
+                placeholder="https://www.awin1.com/cread.php?awinmid=...&ued=https%3A%2F%2F"
+                value="{{ profile.awin_prefix }}"
+            >
+            <div class="form-text text-muted mt-1">
+                Déjalo vacío si no usas links de afiliado Awin.
+            </div>
+        </div>
+
+        <!-- ── Sodimac ── -->
+        <div class="card-custom p-4 mb-4">
+            <h5 class="fw-bold mb-1">
+                <i class="bi bi-hammer me-2 text-warning"></i>Sodimac
+            </h5>
+            <p class="text-muted small mb-3">
+                El link de afiliado Sodimac se añade al <strong>final</strong> del enlace.
+                Copia el inicio de la parte afiliada (el separador que marca dónde empieza).<br>
+                <span class="text-warning">
+                    Ejemplo completo:<br>
+                    <code>https://www.sodimac.cl/.../121227892?eid=666_campaign=trends_usr=9iw92e</code>
+                </span><br>
+                <span class="text-info">
+                    Sufijo a guardar: <code>?eid=</code>
+                </span>
+            </p>
+            <label for="sodimac_suffix_trigger" class="form-label fw-semibold">Inicio del sufijo Sodimac</label>
+            <input
+                type="text"
+                id="sodimac_suffix_trigger"
+                name="sodimac_suffix_trigger"
+                class="form-control bg-dark text-white border-secondary"
+                placeholder="?eid="
+                value="{{ profile.sodimac_suffix_trigger }}"
+            >
+            <div class="form-text text-muted mt-1">
+                Normalmente es <code>?eid=</code>. Déjalo vacío si no usas links de afiliado Sodimac.
+            </div>
+        </div>
+
+        <div class="d-flex gap-3">
+            <button type="submit" class="btn btn-gradient px-4">
+                <i class="bi bi-floppy me-1"></i>Guardar configuración
+            </button>
+            <a href="{% url 'banners:home' %}" class="btn btn-outline-secondary">
+                Cancelar
+            </a>
+        </div>
+    </form>
+
+    <!-- Info box -->
+    <div class="card-custom p-4 mt-5 border border-secondary">
+        <h6 class="fw-bold mb-2">
+            <i class="bi bi-info-circle text-info me-2"></i>¿Cómo funciona?
+        </h6>
+        <ul class="text-muted small mb-0">
+            <li class="mb-1">
+                Al pegar un link en el generador, el sistema detecta automáticamente si tiene
+                una parte de afiliado.
+            </li>
+            <li class="mb-1">
+                Si el link coincide con tu configuración, se limpia y se usa la URL real del
+                producto para extraer sus datos.
+            </li>
+            <li class="mb-1">
+                Si el link tiene una parte de afiliado que <em>no coincide</em> con lo que
+                guardaste aquí, verás una advertencia (el producto se extrae de todas formas).
+            </li>
+            <li>
+                Si no tienes links de afiliado, puedes dejar ambos campos vacíos.
+            </li>
+        </ul>
+    </div>
+
+</div>
+{% endblock %}

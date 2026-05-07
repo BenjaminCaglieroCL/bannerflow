@@ -20,6 +20,13 @@
         </button>
     </div>
 
+    <!-- Affiliate warning -->
+    <div id="affiliateWarning" class="alert alert-warning alert-dismissible fade show mb-3" style="display: none;" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <span id="affiliateWarningText"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+
     <!-- Extracted Data Preview -->
     <div id="dataPreview" class="card-custom p-4 mb-4" style="display: none;">
         <h6 class="text-uppercase fw-bold mb-3">
@@ -143,6 +150,7 @@ async function scrapeProduct() {
 
     document.getElementById('loadingOverlay').style.display = 'flex';
     document.getElementById('scrapeBtn').disabled = true;
+    document.getElementById('affiliateWarning').style.display = 'none';
 
     try {
         const resp = await fetch('/api/scrape/', {
@@ -160,6 +168,15 @@ async function scrapeProduct() {
             lastScrapedData = data;
             showDataPreview(data);
             injectDataIntoCanvas(data);
+            // Show affiliate warning if present
+            const warnEl = document.getElementById('affiliateWarning');
+            const warnText = document.getElementById('affiliateWarningText');
+            if (data.affiliate_warning) {
+                warnText.textContent = data.affiliate_warning;
+                warnEl.style.display = 'block';
+            } else {
+                warnEl.style.display = 'none';
+            }
         } else {
             alert('Error: ' + (data.error || 'No se pudo extraer los datos'));
         }
