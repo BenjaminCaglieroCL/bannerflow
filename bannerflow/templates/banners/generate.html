@@ -4,7 +4,7 @@
 {% block title %}Generar Banner — {{ template.name }}{% endblock %}
 
 {% block content %}
-<div class="generate-container">
+<div class="generate-container" data-template-id="{{ template.id }}">
     <section class="generate-hero">
         <div>
             <p class="generate-eyebrow">Generador</p>
@@ -60,7 +60,7 @@
             <div id="generatedList" class="generated-list"></div>
             <div id="generatedEmptyState" class="generated-empty-state">
                 <i class="bi bi-stack"></i>
-                <p>Los banners que generes apareceran aqui para previsualizarlos o descargarlos uno por uno.</p>
+                <p>Los banners que generes apareceran aqui para previsualizarlos o descargarlos.</p>
             </div>
         </div>
     </section>
@@ -139,6 +139,7 @@
 <script id="templateInitData" type="application/json">{{ template_json|safe }}</script>
 <script>
 const CANVAS_DISPLAY = 540;
+const TEMPLATE_ID = Number(document.querySelector('.generate-container')?.dataset.templateId || 0);
 const FORMATS = {
     '1:1':    { w: 1080, h: 1080 },
     '1.91:1': { w: 1080, h: 566 },
@@ -452,6 +453,48 @@ function buildCanvasSnapshot() {
     }
 }
 
+function buildCanvasStorageImage() {
+    const multiplier = currentFormat.w / CANVAS_DISPLAY;
+    return canvas.toDataURL({ format: 'png', multiplier: multiplier });
+}
+
+async function persistGeneratedBanner(banner) {
+    if (!banner || banner.savedId) {
+        return;
+    }
+
+    try {
+        const imageData = buildCanvasStorageImage();
+        const resp = await fetch('/api/generated-banners/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({
+                template_id: TEMPLATE_ID,
+                title: banner.data.title || '',
+                store_name: banner.data.store_name || '',
+                offer_price: banner.data.offer_price || '',
+                source_url: banner.data.source_url || '',
+                ratio: banner.ratio || '1:1',
+                image_data: imageData,
+            }),
+        });
+
+        if (!resp.ok) {
+            const payload = await resp.json().catch(() => ({}));
+            console.warn('No se pudo guardar banner en historial:', payload.error || resp.statusText);
+            return;
+        }
+
+        const payload = await resp.json();
+        banner.savedId = payload.id;
+    } catch (error) {
+        console.warn('No se pudo guardar banner en historial:', error);
+    }
+}
+
 function openPreviewDrawer() {
     const drawer = document.getElementById('previewDrawer');
     drawer.classList.add('is-open');
@@ -518,6 +561,7 @@ async function addGeneratedBanner(data) {
     generatedBanners = [...generatedBanners, banner];
     await withPreservedPreview(async () => {
         await renderBannerPreview(banner, { open: false });
+        await persistGeneratedBanner(banner);
     });
 }
 

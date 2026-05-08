@@ -1,4 +1,7 @@
 import json
+import base64
+import uuid
+from datetime import timedelta
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth import authenticate, login, logout
@@ -6,12 +9,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import HttpResponseForbidden
+from django.core.files.base import ContentFile
+from django.utils import timezone
 from rest_framework import generics, status
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import BannerTemplate, UserProfile
+from .models import BannerTemplate, UserProfile, GeneratedBanner
 from .serializers import BannerTemplateSerializer
 from .scrapers import scrape_url
 from .utils import clean_affiliate_url
@@ -111,6 +116,59 @@ def generate(request, template_id):
     })
 
 
+@login_required
+def banner_history(request):
+    store_query = request.GET.get('store', '').strip()
+    date_str = request.GET.get('date', '').strip()
+
+    banners = GeneratedBanner.objects.filter(owner=request.user).select_related('template')
+
+    if store_query:
+        banners = banners.filter(store_name__icontains=store_query)
+
+    today = timezone.localdate()
+    yesterday = today - timedelta(days=1)
+
+    selected_date = None
+    if date_str:
+        try:
+            from datetime import date as date_type
+            selected_date = date_type.fromisoformat(date_str)
+            banners = banners.filter(created_at__date=selected_date)
+        except ValueError:
+            selected_date = None
+
+    grouped = []
+    groups_map = {}
+
+    for banner in banners:
+        local_dt = timezone.localtime(banner.created_at)
+        d = local_dt.date()
+        if d == today:
+            label = 'Hoy'
+        elif d == yesterday:
+            label = 'Ayer'
+        else:
+            label = d.strftime('%d/%m/%Y')
+
+        key = d.isoformat()
+        if key not in groups_map:
+            groups_map[key] = {
+                'key': key,
+                'label': label,
+                'items': [],
+            }
+            grouped.append(groups_map[key])
+
+        groups_map[key]['items'].append(banner)
+
+    return render(request, 'banners/history.html', {
+        'grouped_banners': grouped,
+        'store_query': store_query,
+        'selected_date': date_str,
+    })
+
+
 # --- API Views ---
 
 class TemplateListCreate(generics.ListCreateAPIView):
@@ -154,6 +212,55 @@ def scrape_product(request):
             {'error': f'Error al extraer datos: {str(e)}'},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+
+@api_view(['POST'])
+def save_generated_banner(request):
+    if not request.user.is_authenticated:
+        return Response({'error': 'Autenticación requerida'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    template_id = request.data.get('template_id')
+    image_data = request.data.get('image_data', '')
+    ratio = (request.data.get('ratio') or '1:1').strip()
+    title = (request.data.get('title') or '').strip()
+    store_name = (request.data.get('store_name') or '').strip()
+    offer_price = request.data.get('offer_price')
+    source_url = (request.data.get('source_url') or '').strip()
+
+    if not image_data or not isinstance(image_data, str) or ',' not in image_data:
+        return Response({'error': 'La imagen generada es inválida.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    template = None
+    if template_id:
+        template = get_object_or_404(_user_templates(request.user), pk=template_id)
+
+    try:
+        header, encoded = image_data.split(',', 1)
+        if 'image/png' not in header and 'image/jpeg' not in header:
+            return Response({'error': 'Formato de imagen no soportado.'}, status=status.HTTP_400_BAD_REQUEST)
+        raw = base64.b64decode(encoded)
+    except Exception:
+        return Response({'error': 'No se pudo procesar la imagen generada.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    fname = f'generated_{request.user.id}_{uuid.uuid4().hex[:10]}.png'
+    offer_price_value = '' if offer_price is None else str(offer_price)
+
+    banner = GeneratedBanner(
+        owner=request.user,
+        template=template,
+        title=title,
+        store_name=store_name,
+        offer_price=offer_price_value,
+        source_url=source_url,
+        ratio=ratio,
+    )
+    banner.image.save(fname, ContentFile(raw), save=True)
+
+    return Response({
+        'id': banner.id,
+        'created_at': timezone.localtime(banner.created_at).isoformat(),
+        'image_url': banner.image.url,
+    }, status=status.HTTP_201_CREATED)
 
 
 # --- Affiliate settings ---

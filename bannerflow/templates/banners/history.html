@@ -1,0 +1,262 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Historial de Banners — BannerFlow{% endblock %}
+
+{% block content %}
+<div class="generate-container history-page">
+    <section class="generate-hero">
+        <div>
+            <p class="generate-eyebrow">Mi cuenta</p>
+            <h2><i class="bi bi-clock-history text-gradient me-2"></i>Historial de banners</h2>
+            <p class="generate-subtitle">Todos los banners que has generado se guardan aqui. Puedes filtrarlos por fecha o comercio y descargarlos individualmente.</p>
+        </div>
+    </section>
+
+    <section class="history-filters card-custom">
+        <form method="get" class="history-filters-form">
+            <div class="history-filter-field">
+                <label for="date">Fecha</label>
+                <input type="date" id="date" name="date" value="{{ selected_date }}">
+            </div>
+            <div class="history-filter-field history-filter-store">
+                <label for="store">Comercio</label>
+                <input id="store" name="store" value="{{ store_query }}" placeholder="Ej: Adidas, Falabella, Sodimac...">
+            </div>
+            <div class="history-filter-actions">
+                <button type="submit" class="btn-gradient">
+                    <i class="bi bi-search me-1"></i>Buscar
+                </button>
+                <a href="{% url 'banners:history' %}" class="btn-outline-light-custom">Limpiar filtros</a>
+            </div>
+        </form>
+    </section>
+
+    {% if grouped_banners %}
+        {% for group in grouped_banners %}
+        <section class="history-group card-custom">
+            <div class="history-group-header">
+                <h5><i class="bi bi-calendar-event me-2"></i>{{ group.label }}</h5>
+                <span>{{ group.items|length }} banners</span>
+            </div>
+
+            <div class="history-items">
+                {% for banner in group.items %}
+                <article class="generated-item history-item" id="history-item-{{ banner.id }}"
+                         data-id="{{ banner.id }}"
+                         data-title="{{ banner.title|default_if_none:''|escape }}"
+                         data-store="{{ banner.store_name|default_if_none:''|escape }}"
+                         data-price="{{ banner.offer_price|default_if_none:''|escape }}"
+                         data-ratio="{{ banner.ratio|default_if_none:'1:1'|escape }}"
+                         data-image-url="{{ banner.image.url }}"
+                         data-template="{% if banner.template %}{{ banner.template.name|escape }}{% else %}Plantilla no disponible{% endif %}">
+                    <div class="generated-item-thumb-wrap">
+                        <img class="generated-item-thumb" src="{{ banner.image.url }}" alt="Banner {{ banner.title|default:'sin titulo' }}">
+                    </div>
+                    <div class="generated-item-body">
+                        <strong>{{ banner.title|default:'Producto sin nombre' }}</strong>
+                        <span>{{ banner.store_name|default:'Tienda sin nombre' }}</span>
+                        <small>Plantilla: {% if banner.template %}{{ banner.template.name }}{% else %}No disponible{% endif %}</small>
+                        <small>Formato visual: {{ banner.ratio }} · {{ banner.offer_price|default:'Sin precio' }}</small>
+                    </div>
+                    <div class="generated-item-actions history-item-actions">
+                        <label class="generated-item-format" aria-label="Formato de descarga">
+                            <span>Archivo</span>
+                            <select class="history-format-select" data-banner-id="{{ banner.id }}">
+                                <option value="png" selected>PNG</option>
+                                <option value="jpeg">JPG</option>
+                            </select>
+                        </label>
+                        <button class="btn-outline-light-custom btn-sm history-preview-btn" type="button" data-banner-id="{{ banner.id }}">
+                            <i class="bi bi-eye me-1"></i>Previsualizar
+                        </button>
+                        <button class="btn-outline-light-custom btn-sm generated-item-download history-download-btn" type="button" data-banner-id="{{ banner.id }}" aria-label="Descargar banner">
+                            <i class="bi bi-download"></i>
+                        </button>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+    {% else %}
+    <div class="generated-empty-state">
+        <i class="bi bi-folder2-open"></i>
+        <p>No hay banners guardados para los filtros seleccionados.</p>
+    </div>
+    {% endif %}
+
+    <aside id="historyPreviewDrawer" class="generate-preview-drawer" aria-hidden="true">
+        <div class="generate-preview-panel card-custom">
+            <div class="generate-preview-header">
+                <div>
+                    <p class="generate-section-label">Vista previa guardada</p>
+                    <h5 id="historyPreviewTitle">Selecciona un banner</h5>
+                    <p id="historyPreviewMeta" class="generate-preview-meta">Abre cualquier banner de tu historial para visualizarlo.</p>
+                </div>
+                <div class="generate-preview-controls">
+                    <div class="generate-preview-actions">
+                        <button class="btn-gradient" type="button" id="historyDownloadActiveBtn" onclick="downloadHistoryActive()" disabled>
+                            <i class="bi bi-download me-1"></i>Descargar
+                        </button>
+                    </div>
+                    <button class="btn-outline-light-custom generate-preview-close" type="button" onclick="closeHistoryPreview()" aria-label="Cerrar vista previa">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="generate-preview-card">
+                <div class="generate-preview-details">
+                    <span id="historyPreviewTemplate" class="generate-preview-pill">Plantilla: -</span>
+                    <span id="historyPreviewStore" class="generate-preview-pill">Tienda: -</span>
+                    <span id="historyPreviewPrice" class="generate-preview-pill">Precio: -</span>
+                    <span id="historyPreviewRatio" class="generate-preview-pill">Formato visual: -</span>
+                    <span id="historyPreviewFile" class="generate-preview-pill">Archivo: PNG</span>
+                </div>
+
+                <div class="history-preview-image-wrap">
+                    <img id="historyPreviewImage" class="history-preview-image" alt="Vista previa del banner">
+                </div>
+            </div>
+        </div>
+    </aside>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const historyBanners = {};
+let historyActiveId = null;
+
+function normalizeFormatLabel(format) {
+    return format === 'jpeg' ? 'JPG' : 'PNG';
+}
+
+function slugify(text) {
+    return (text || 'banner')
+        .toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '') || 'banner';
+}
+
+function collectHistoryBanners() {
+    document.querySelectorAll('.history-item').forEach(item => {
+        const id = Number(item.dataset.id);
+        historyBanners[id] = {
+            id,
+            title: item.dataset.title || 'Producto sin nombre',
+            store: item.dataset.store || 'Tienda sin nombre',
+            price: item.dataset.price || 'Sin precio',
+            ratio: item.dataset.ratio || '1:1',
+            imageUrl: item.dataset.imageUrl,
+            template: item.dataset.template || 'Plantilla no disponible',
+            downloadFormat: 'png',
+        };
+    });
+}
+
+function bindHistoryActions() {
+    document.querySelectorAll('.history-format-select').forEach(select => {
+        select.addEventListener('change', event => {
+            const id = Number(event.currentTarget.dataset.bannerId || 0);
+            updateHistoryDownloadFormat(id, event.currentTarget.value);
+        });
+    });
+
+    document.querySelectorAll('.history-preview-btn').forEach(button => {
+        button.addEventListener('click', event => {
+            const id = Number(event.currentTarget.dataset.bannerId || 0);
+            openHistoryPreview(id);
+        });
+    });
+
+    document.querySelectorAll('.history-download-btn').forEach(button => {
+        button.addEventListener('click', event => {
+            const id = Number(event.currentTarget.dataset.bannerId || 0);
+            downloadHistoryBanner(id);
+        });
+    });
+}
+
+function updateHistoryDownloadFormat(id, format) {
+    if (!historyBanners[id]) return;
+    historyBanners[id].downloadFormat = format;
+
+    if (historyActiveId === id) {
+        document.getElementById('historyPreviewFile').textContent = `Archivo: ${normalizeFormatLabel(format)}`;
+    }
+}
+
+function openHistoryPreview(id) {
+    const banner = historyBanners[id];
+    if (!banner) return;
+
+    historyActiveId = id;
+    const drawer = document.getElementById('historyPreviewDrawer');
+    drawer.classList.add('is-open');
+    drawer.setAttribute('aria-hidden', 'false');
+
+    document.getElementById('historyPreviewTitle').textContent = banner.title;
+    document.getElementById('historyPreviewMeta').textContent = `${banner.store} · ${banner.ratio} · ${banner.price}`;
+    document.getElementById('historyPreviewTemplate').textContent = `Plantilla: ${banner.template}`;
+    document.getElementById('historyPreviewStore').textContent = `Tienda: ${banner.store}`;
+    document.getElementById('historyPreviewPrice').textContent = `Precio: ${banner.price}`;
+    document.getElementById('historyPreviewRatio').textContent = `Formato visual: ${banner.ratio}`;
+    document.getElementById('historyPreviewFile').textContent = `Archivo: ${normalizeFormatLabel(banner.downloadFormat)}`;
+    document.getElementById('historyPreviewImage').src = banner.imageUrl;
+    document.getElementById('historyDownloadActiveBtn').disabled = false;
+}
+
+function closeHistoryPreview() {
+    const drawer = document.getElementById('historyPreviewDrawer');
+    drawer.classList.remove('is-open');
+    drawer.setAttribute('aria-hidden', 'true');
+    historyActiveId = null;
+    document.getElementById('historyDownloadActiveBtn').disabled = true;
+}
+
+function buildHistoryFileName(banner) {
+    const extension = banner.downloadFormat === 'jpeg' ? 'jpg' : 'png';
+    const safeTitle = slugify(banner.title || 'banner');
+    const safeStore = slugify(banner.store || 'tienda');
+    const safeRatio = slugify(banner.ratio || '1-1');
+    return `${safeTitle}_${safeStore}_${safeRatio}.${extension}`;
+}
+
+function downloadHistoryBanner(id) {
+    const banner = historyBanners[id];
+    if (!banner || !banner.imageUrl) return;
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+        const cv = document.createElement('canvas');
+        cv.width = img.naturalWidth;
+        cv.height = img.naturalHeight;
+        const ctx = cv.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        const mime = banner.downloadFormat === 'jpeg' ? 'image/jpeg' : 'image/png';
+        const dataURL = cv.toDataURL(mime, banner.downloadFormat === 'jpeg' ? 0.95 : 1);
+
+        const link = document.createElement('a');
+        link.href = dataURL;
+        link.download = buildHistoryFileName(banner);
+        link.click();
+    };
+    img.src = banner.imageUrl;
+}
+
+function downloadHistoryActive() {
+    if (!historyActiveId) return;
+    downloadHistoryBanner(historyActiveId);
+}
+
+collectHistoryBanners();
+bindHistoryActions();
+</script>
+{% endblock %}

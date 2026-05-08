@@ -59,3 +59,32 @@ class BannerTemplate(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class GeneratedBanner(models.Model):
+    owner = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='generated_banners',
+    )
+    template = models.ForeignKey(
+        BannerTemplate,
+        on_delete=models.SET_NULL,
+        related_name='generated_banners',
+        null=True,
+        blank=True,
+    )
+    title = models.CharField(max_length=300, blank=True, default='')
+    store_name = models.CharField(max_length=120, blank=True, default='')
+    offer_price = models.CharField(max_length=80, blank=True, default='')
+    source_url = models.URLField(blank=True, default='')
+    ratio = models.CharField(max_length=20, default='1:1')
+    image = models.ImageField(upload_to='generated_banners/%Y/%m/%d/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        base = self.title or 'Banner sin titulo'
+        return f'{base} ({self.owner.username})'
