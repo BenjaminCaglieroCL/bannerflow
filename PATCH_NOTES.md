@@ -26,12 +26,38 @@
 
    + Añadidos
 
-   - Se Agrego en la Página de inicio un Banner-card con ejemplos de plantillas y diseños.
-   - Se Agrego en la Página de inicio un slide con los comercios compatibles y proximamente.
+   - Se Agregó en la Página de inicio un Banner-card con ejemplos de plantillas y diseños.
+   - Se Agregó en la Página de inicio un slide con los comercios compatibles y proximamente.
 
    [Correcciones] 
 
    - Se corrigio un problema con el tamaño de la vista previa de cada plantilla.
    - Se corrigio un error con el slide de comercios.
 
-   
+
+## [v1.0.3] - 07-05-2026
+
+   + Añadidos 
+
+   - Se agregó el apartado de configuración de afiliados a comercios para perfil de usuario.
+   - Se agregó apartado visual y alertas para operaciones exitosas/desconocidas/fallidas del generador para enlaces de afiliados.
+   - Se agregó detección de enlaces afiliados que sean distintos a los configurados por el usuario.
+   - Se creó apartado para configurar enlaces de afiliados para comercios (Adidas - Sodimac).
+
+   [Correcciones]
+
+   - Se corrigió la detección de elementos para el comercio Sodimac.
+   - Se corrigió la detección de elementos para enlaces de afiliados.
+   - Se corrigió logos de Adidas y Sodimac en el panel de afiliados en configuración.
+
+
+## [v1.0.4] - 07-05-2026
+
+   + Añadidos
+
+   - Se Añadio la vista en Lista para el generador de banners, lo que permite generar varios a la vez
+   - Se añadio la posibilidad de ajustar formato y tamaño de descargas
+
+   [Correcciones]
+    
+   - Se Corrigieron las vistas de la previsualización.
