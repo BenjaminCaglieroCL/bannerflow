@@ -942,6 +942,16 @@ body {
     font-size: 0.9rem;
 }
 
+.history-group-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.history-download-date-btn {
+    white-space: nowrap;
+}
+
 .history-items {
     display: flex;
     flex-direction: column;
@@ -1007,6 +1017,17 @@ body {
 
     .generated-item {
         justify-items: start;
+    }
+
+    .history-group-header {
+        align-items: flex-start;
+        gap: 10px;
+        flex-direction: column;
+    }
+
+    .history-group-meta {
+        width: 100%;
+        justify-content: space-between;
     }
 
         .generate-preview-drawer {

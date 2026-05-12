@@ -329,6 +329,15 @@ function renderGeneratedList() {
                 <small>Formato: ${escapeHtml(banner.ratio)} · ${escapeHtml(banner.data.offer_price ? formatPrice(banner.data.offer_price) : 'Sin precio')}</small>
             </div>
             <div class="generated-item-actions">
+                <label class="generated-item-format" aria-label="Formato visual para ${escapeHtml(banner.data.title || 'banner')}">
+                    <span>Formato</span>
+                    <select onchange="updateBannerRatio(${banner.id}, this.value)">
+                        <option value="1:1" ${banner.ratio === '1:1' ? 'selected' : ''}>1:1</option>
+                        <option value="1.91:1" ${banner.ratio === '1.91:1' ? 'selected' : ''}>1.91:1</option>
+                        <option value="4:5" ${banner.ratio === '4:5' ? 'selected' : ''}>4:5</option>
+                        <option value="9:16" ${banner.ratio === '9:16' ? 'selected' : ''}>9:16</option>
+                    </select>
+                </label>
                 <label class="generated-item-format" aria-label="Formato de descarga para ${escapeHtml(banner.data.title || 'banner')}">
                     <span>Archivo</span>
                     <select onchange="updateBannerDownloadFormat(${banner.id}, this.value)">
@@ -613,6 +622,26 @@ function updateBannerDownloadFormat(id, format) {
     if (activeBannerId === id) {
         const activeBanner = getBannerById(id);
         updatePreviewHeader(activeBanner);
+    }
+
+    renderGeneratedList();
+}
+
+async function updateBannerRatio(id, ratio) {
+    if (!FORMATS[ratio]) {
+        return;
+    }
+
+    generatedBanners = generatedBanners.map(banner => banner.id === id ? { ...banner, ratio: ratio } : banner);
+    const targetBanner = getBannerById(id);
+
+    if (!targetBanner) {
+        return;
+    }
+
+    if (activeBannerId === id) {
+        await renderBannerPreview(targetBanner, { open: isPreviewDrawerOpen });
+        return;
     }
 
     renderGeneratedList();
