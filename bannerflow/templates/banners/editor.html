@@ -266,7 +266,7 @@ function switchFormat(format) {
 
 // ===== Add Elements =====
 function addText(text, fontSize, bold, dataType) {
-    const t = new fabric.IText(text, {
+    const sharedOptions = {
         left: 50,
         top: 50 + Math.random() * 200,
         fontSize: fontSize,
@@ -275,7 +275,18 @@ function addText(text, fontSize, bold, dataType) {
         fill: '#ffffff',
         shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.5)', blur: 4, offsetX: 2, offsetY: 2 }),
         dataType: dataType,
-    });
+    };
+
+    const t = dataType === 'title'
+        ? new fabric.Textbox('Titulo del\nProducto', {
+            ...sharedOptions,
+            left: canvas.getWidth() / 2,
+            width: Math.round(canvas.getWidth() * 0.72),
+            originX: 'center',
+            textAlign: 'center',
+            splitByGrapheme: false,
+        })
+        : new fabric.IText(text, sharedOptions);
     canvas.add(t);
     canvas.setActiveObject(t);
 }

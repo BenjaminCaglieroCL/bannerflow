@@ -394,23 +394,26 @@ async function applyDataToCanvas(targetCanvas, data) {
 
         switch (dt) {
             case 'title':
-                if (obj.type === 'i-text' || obj.type === 'text') {
-                    obj.set('text', truncateText(data.title || 'Producto', 60));
+                if (obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox') {
+                    const previousCenter = obj.getCenterPoint();
+                    obj.set('text', formatTitleTwoLines(data.title || 'Producto', obj, targetCanvas));
+                    obj.set('textAlign', 'center');
+                    obj.setPositionByOrigin(previousCenter, 'center', 'center');
                 }
                 break;
             case 'original_price':
-                if (obj.type === 'i-text' || obj.type === 'text') {
+                if (obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox') {
                     obj.set('text', data.original_price ? formatPrice(data.original_price) : '');
                     obj.set('linethrough', Boolean(data.original_price && data.original_price !== data.offer_price));
                 }
                 break;
             case 'offer_price':
-                if (obj.type === 'i-text' || obj.type === 'text') {
+                if (obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox') {
                     obj.set('text', data.offer_price ? formatPrice(data.offer_price) : '');
                 }
                 break;
             case 'store_name':
-                if (obj.type === 'i-text' || obj.type === 'text') {
+                if (obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox') {
                     obj.set('text', data.store_name || 'Tienda');
                 }
                 break;
@@ -577,6 +580,87 @@ async function addGeneratedBanner(data) {
 function truncateText(text, maxLen) {
     if (text.length <= maxLen) return text;
     return text.substring(0, maxLen) + '...';
+}
+
+function measureFabricTextWidth(text, obj) {
+    const probe = fabric.util.createCanvasElement();
+    const ctx = probe.getContext('2d');
+    const fontStyle = obj?.fontStyle || 'normal';
+    const fontWeight = obj?.fontWeight || 'normal';
+    const fontSize = obj?.fontSize || 32;
+    const fontFamily = obj?.fontFamily || 'Poppins';
+
+    ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+    return ctx.measureText(text).width;
+}
+
+function fitTextToWidth(text, maxWidth, obj) {
+    let value = String(text || '');
+    while (value.length > 1 && measureFabricTextWidth(value, obj) > maxWidth) {
+        value = value.slice(0, -1);
+    }
+    return value;
+}
+
+function formatTitleTwoLines(text, obj, targetCanvas) {
+    const raw = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!raw) return 'Producto';
+
+    const words = raw.split(' ');
+    const boxWidth = obj?.type === 'textbox'
+        ? ((obj.width || 0) * (obj.scaleX || 1))
+        : (targetCanvas?.getWidth() || 540) * 0.8;
+    const maxWidth = Math.max(150, boxWidth - 6);
+
+    let line1 = '';
+    let line2 = '';
+    let overflow = false;
+
+    for (const word of words) {
+        const candidate1 = line1 ? `${line1} ${word}` : word;
+        if (!line2 && measureFabricTextWidth(candidate1, obj) <= maxWidth) {
+            line1 = candidate1;
+            continue;
+        }
+
+        if (!line2) {
+            const candidate2 = word;
+            if (measureFabricTextWidth(candidate2, obj) <= maxWidth) {
+                line2 = candidate2;
+            } else {
+                line2 = fitTextToWidth(candidate2, maxWidth, obj);
+                overflow = true;
+            }
+            continue;
+        }
+
+        const candidate3 = `${line2} ${word}`;
+        if (measureFabricTextWidth(candidate3, obj) <= maxWidth) {
+            line2 = candidate3;
+            continue;
+        }
+
+        overflow = true;
+        break;
+    }
+
+    if (!line1) {
+        line1 = fitTextToWidth(raw, maxWidth, obj);
+        overflow = line1 !== raw;
+    }
+
+    if (line2) {
+        if (overflow) {
+            let base = line2.trimEnd();
+            while (base.length > 1 && measureFabricTextWidth(`${base}...`, obj) > maxWidth) {
+                base = base.slice(0, -1).trimEnd();
+            }
+            line2 = `${base}...`;
+        }
+        return `${line1}\n${line2}`;
+    }
+
+    return line1;
 }
 
 async function selectFormat(el) {
