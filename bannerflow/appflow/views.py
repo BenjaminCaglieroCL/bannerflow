@@ -19,7 +19,45 @@ from rest_framework.response import Response
 from .models import BannerTemplate, UserProfile, GeneratedBanner
 from .serializers import BannerTemplateSerializer
 from .scrapers import scrape_url
-from .utils import clean_affiliate_url
+from .utils import clean_affiliate_url, resolve_affiliate_link
+
+
+def _coerce_price_int(value):
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    if isinstance(value, str):
+        cleaned = value.strip().replace('.', '').replace(',', '')
+        if cleaned.isdigit():
+            return int(cleaned)
+    return None
+
+
+def _annotate_offer_status(data):
+    """Mark whether a product has a real offer and expose a warning for normal-price items."""
+    original_price = _coerce_price_int(data.get('original_price'))
+    offer_price = _coerce_price_int(data.get('offer_price'))
+
+    normal_price = original_price if original_price is not None else offer_price
+    has_offer = bool(
+        original_price is not None
+        and offer_price is not None
+        and offer_price < original_price
+    )
+
+    data['has_offer'] = has_offer
+    data['normal_price'] = normal_price
+
+    if not has_offer:
+        data['no_offer_warning'] = (
+            'Este producto no tiene precio oferta (esta a precio normal). '
+            'Si lo agregas, el campo de oferta se ocultara en la plantilla.'
+        )
 
 
 def _templates_json(queryset):
@@ -200,12 +238,26 @@ def scrape_product(request):
             {'error': 'Se requiere una URL'},
             status=status.HTTP_400_BAD_REQUEST
         )
+    original_url = url
     profile = getattr(request.user, 'userprofile', None)
-    clean_url, affiliate_warning = clean_affiliate_url(url, profile)
+    clean_url, clean_warning = clean_affiliate_url(original_url, profile)
     try:
         data = scrape_url(clean_url)
-        if affiliate_warning:
-            data['affiliate_warning'] = affiliate_warning
+        _annotate_offer_status(data)
+        affiliate_data = resolve_affiliate_link(
+            original_url=original_url,
+            clean_url=clean_url,
+            store_name=data.get('store_name', ''),
+            profile=profile,
+        )
+
+        data['affiliate_link'] = affiliate_data.get('affiliate_link', '')
+        data['affiliate_store_key'] = affiliate_data.get('store_key', '')
+
+        warning = affiliate_data.get('affiliate_warning') or clean_warning
+        if warning:
+            data['affiliate_warning'] = warning
+
         return Response(data)
     except Exception as e:
         return Response(

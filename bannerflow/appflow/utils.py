@@ -1,7 +1,7 @@
 """Utilities: affiliate URL cleaning + thumbnail generation for BannerTemplate."""
 import io
 import re
-from urllib.parse import urlparse, parse_qs, unquote
+from urllib.parse import urlparse, parse_qs, unquote, quote
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -84,6 +84,133 @@ def clean_affiliate_url(url, profile=None):
             return clean_url, warning
 
     return url, None
+
+
+def _detect_store_from_url_or_name(url, store_name=''):
+    domain = (urlparse(url).netloc or '').lower()
+    name = (store_name or '').lower()
+
+    if 'adidas' in domain or 'adidas' in name or 'awin1.com' in domain:
+        return 'adidas'
+    if 'sodimac' in domain or 'homecenter' in domain or 'sodimac' in name:
+        return 'sodimac'
+    if 'mercadolibre' in domain or 'mercadoli' in domain or 'meli.la' in domain or 'mercadolibre' in name:
+        return 'meli'
+    if 'falabella' in domain or 'falabella' in name:
+        return 'falabella'
+    return 'other'
+
+
+def _append_sodimac_suffix(product_url, suffix):
+    if not suffix:
+        return product_url
+
+    base = (product_url or '').strip()
+    extra = suffix.strip()
+    if not base:
+        return base
+
+    if extra.startswith('?'):
+        if '?' not in base:
+            return f'{base}{extra}'
+        if base.endswith('?') or base.endswith('&'):
+            return f'{base}{extra[1:]}'
+        return f'{base}&{extra[1:]}'
+
+    if not extra.startswith('&'):
+        extra = '&' + extra
+    if '?' not in base:
+        return f'{base}?{extra.lstrip("&")}'
+    return f'{base}{extra}'
+
+
+def resolve_affiliate_link(original_url, clean_url=None, store_name='', profile=None):
+    """
+    Build the affiliate URL to show in the generated-banner list.
+
+    Returns a dict:
+        {
+            'affiliate_link': str,
+            'affiliate_warning': str|None,
+            'store_key': str,
+        }
+    """
+    source = (original_url or '').strip()
+    product_url = (clean_url or original_url or '').strip()
+    store_key = _detect_store_from_url_or_name(source or product_url, store_name=store_name)
+
+    if not source and not product_url:
+        return {
+            'affiliate_link': '',
+            'affiliate_warning': 'No se recibió una URL para construir el link de afiliado.',
+            'store_key': store_key,
+        }
+
+    # MercadoLibre / Falabella: return as-is.
+    if store_key in ('meli', 'falabella', 'other'):
+        return {
+            'affiliate_link': source or product_url,
+            'affiliate_warning': None,
+            'store_key': store_key,
+        }
+
+    # Adidas
+    if store_key == 'adidas':
+        if 'awin1.com' in (urlparse(source).netloc or '').lower():
+            return {
+                'affiliate_link': source,
+                'affiliate_warning': None,
+                'store_key': store_key,
+            }
+
+        prefix = ((profile.awin_prefix if profile else '') or '').strip()
+        if not prefix:
+            return {
+                'affiliate_link': '',
+                'affiliate_warning': 'Configura primero tu prefijo Awin en Configuración de Afiliado para generar el link de Adidas.',
+                'store_key': store_key,
+            }
+
+        target = product_url
+        if re.search(r'ued=https%3A%2F%2F$', prefix, flags=re.I):
+            target = re.sub(r'^https?://', '', target, flags=re.I)
+            target = quote(target, safe='')
+
+        return {
+            'affiliate_link': f'{prefix}{target}',
+            'affiliate_warning': None,
+            'store_key': store_key,
+        }
+
+    # Sodimac
+    if store_key == 'sodimac':
+        lower_source = source.lower()
+        if '?eid=' in lower_source or '&eid=' in lower_source:
+            return {
+                'affiliate_link': source,
+                'affiliate_warning': None,
+                'store_key': store_key,
+            }
+
+        suffix = ((profile.sodimac_suffix_trigger if profile else '') or '').strip()
+        if not suffix or suffix.lower() in ('?eid=', 'eid=', '&eid='):
+            return {
+                'affiliate_link': '',
+                'affiliate_warning': 'Configura primero tu sufijo completo de Sodimac en Configuración de Afiliado para generar el link.',
+                'store_key': store_key,
+            }
+
+        return {
+            'affiliate_link': _append_sodimac_suffix(product_url, suffix),
+            'affiliate_warning': None,
+            'store_key': store_key,
+        }
+
+    return {
+        'affiliate_link': source or product_url,
+        'affiliate_warning': None,
+        'store_key': store_key,
+    }
 
 from django.core.files.base import ContentFile
 

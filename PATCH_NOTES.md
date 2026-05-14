@@ -55,9 +55,27 @@
 
    + Añadidos
 
-   - Se Añadio la vista en Lista para el generador de banners, lo que permite generar varios a la vez
+   - Se añadio la vista en Lista para el generador de banners, lo que permite generar varios a la vez
    - Se añadio la posibilidad de ajustar formato y tamaño de descargas
 
    [Correcciones]
     
    - Se Corrigieron las vistas de la previsualización.
+
+
+## [v1.0.5] - 13-05-2026
+
+   + Añadidos
+
+   - Se añadio un selector de formato previo para los banner a generar.
+   - Se añadio la posibilidad de descargar los banner en historial de forma invidivual o por dia completo.
+   - Se añadio la posibilidad de cambiar el formato de banner generados.
+   - Se añadio la funcion de copiar link de referido, funciona para los comercios de adidas y sodimac previamente configurados por el usuario.
+
+   - Se añadio un selector de páginas cuando los banner superan 10 unidades.
+   - Se añadio la funcion de identificar productos sin oferta vigente, por lo que si un producto no tiene oferta el sistema lo detecta y pregunta al usuario si de igual forma quiere añadirlo a la lista de banners generados.
+
+   [Correcciones]
+
+   - Se corrigió el problema de formato de los titulos de producto (Doble linea y limitación de largo).
+   - Se corrigió un problema con el vista previa el cual impedia que se guardaran cambios realizados dentro de él.

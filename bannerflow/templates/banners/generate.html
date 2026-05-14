@@ -28,6 +28,47 @@
         <p class="generate-toolbar-help">Cada URL exitosa crea un banner y lo agrega a la lista inferior.</p>
     </section>
 
+    <section class="generate-default-format card-custom">
+        <div class="generate-default-format-header">
+            <p class="generate-section-label">Formato predeterminado</p>
+            <p class="generate-default-format-help">Selecciona el formato con que se generarán los nuevos banners. Puedes cambiarlo individualmente después.</p>
+        </div>
+        <div class="generate-default-format-options">
+            <button class="format-default-btn" data-ratio="1:1" onclick="setDefaultFormat(this)" type="button">
+                <div class="format-default-visual">
+                    <div class="format-default-shape ratio-1-1"></div>
+                </div>
+                <span class="format-default-ratio">1:1</span>
+                <span class="format-default-name">Publicación</span>
+                <span class="format-default-dims">1080×1080</span>
+            </button>
+            <button class="format-default-btn" data-ratio="1.91:1" onclick="setDefaultFormat(this)" type="button">
+                <div class="format-default-visual">
+                    <div class="format-default-shape ratio-191-1"></div>
+                </div>
+                <span class="format-default-ratio">1.91:1</span>
+                <span class="format-default-name">Publicación Horizontal</span>
+                <span class="format-default-dims">1080×566</span>
+            </button>
+            <button class="format-default-btn active" data-ratio="4:5" onclick="setDefaultFormat(this)" type="button">
+                <div class="format-default-visual">
+                    <div class="format-default-shape ratio-4-5"></div>
+                </div>
+                <span class="format-default-ratio">4:5</span>
+                <span class="format-default-name">Estándar</span>
+                <span class="format-default-dims">1080×1350</span>
+            </button>
+            <button class="format-default-btn" data-ratio="9:16" onclick="setDefaultFormat(this)" type="button">
+                <div class="format-default-visual">
+                    <div class="format-default-shape ratio-9-16"></div>
+                </div>
+                <span class="format-default-ratio">9:16</span>
+                <span class="format-default-name">Historia</span>
+                <span class="format-default-dims">1080×1920</span>
+            </button>
+        </div>
+    </section>
+
     <div id="affiliateWarning" class="alert alert-warning alert-dismissible fade show mb-3" style="display: none;" role="alert">
         <i class="bi bi-exclamation-triangle-fill me-2"></i>
         <span id="affiliateWarningText"></span>
@@ -58,6 +99,7 @@
             </div>
 
             <div id="generatedList" class="generated-list"></div>
+            <div id="generatedPagination" class="generated-pagination" style="display: none;"></div>
             <div id="generatedEmptyState" class="generated-empty-state">
                 <i class="bi bi-stack"></i>
                 <p>Los banners que generes apareceran aqui para previsualizarlos o descargarlos.</p>
@@ -154,14 +196,18 @@ const canvas = new fabric.Canvas('bannerCanvas', {
     preserveObjectStacking: true,
 });
 
-let currentFormat = { w: 1080, h: 1080 };
-let currentRatio = '1:1';
+let currentFormat = { w: 1080, h: 1350 };
+let currentRatio = '4:5';
 let allFormatsData = {};
 let lastScrapedData = null;
 let generatedBanners = [];
 let activeBannerId = null;
 let bannerSequence = 0;
 let isPreviewDrawerOpen = false;
+let copiedAffiliateBannerId = null;
+let currentPage = 1;
+const ITEMS_PER_PAGE = 10;
+let isCanvasHydrating = false;
 
 const rawData = JSON.parse(document.getElementById('templateInitData').textContent);
 if (rawData && Object.keys(rawData).length > 0) {
@@ -174,8 +220,8 @@ if (rawData && Object.keys(rawData).length > 0) {
     }
 }
 
-if (allFormatsData['1:1']) {
-    canvas.loadFromJSON(allFormatsData['1:1'], () => {
+if (allFormatsData['4:5'] || allFormatsData['1:1']) {
+    canvas.loadFromJSON(allFormatsData['4:5'] || allFormatsData['1:1'], () => {
         canvas.renderAll();
     });
 }
@@ -204,6 +250,15 @@ async function scrapeProduct() {
         const data = await resp.json();
 
         if (resp.ok) {
+            if (data.has_offer === false) {
+                const shouldInclude = window.confirm(
+                    `${data.no_offer_warning || 'Este producto no tiene precio oferta.'}\n\n¿Quieres agregarlo igualmente a la lista de banners generados?`
+                );
+                if (!shouldInclude) {
+                    return;
+                }
+            }
+
             lastScrapedData = data;
             await addGeneratedBanner(data);
 
@@ -262,6 +317,43 @@ function getBannerById(id) {
     return generatedBanners.find(banner => banner.id === id) || null;
 }
 
+function setDefaultFormat(el) {
+    const ratio = el.dataset.ratio;
+    const format = FORMATS[ratio];
+    if (!format) return;
+    currentRatio = ratio;
+    currentFormat = { w: format.w, h: format.h };
+    document.querySelectorAll('.format-default-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.ratio === ratio);
+    });
+}
+
+function snapshotCanvasData(targetCanvas) {
+    return targetCanvas.toJSON(['dataType']);
+}
+
+function saveBannerCanvasState(banner, ratio) {
+    if (!banner || !ratio) {
+        return;
+    }
+
+    if (!banner.editedFormatsData) {
+        banner.editedFormatsData = {};
+    }
+
+    banner.editedFormatsData[ratio] = snapshotCanvasData(canvas);
+    banner.thumbnail = buildCanvasSnapshot();
+}
+
+function saveActiveBannerCanvasState() {
+    const activeBanner = getBannerById(activeBannerId);
+    if (!activeBanner || isCanvasHydrating) {
+        return;
+    }
+
+    saveBannerCanvasState(activeBanner, activeBanner.ratio || currentRatio);
+}
+
 function setActiveFormatButton(ratio) {
     document.querySelectorAll('.format-option').forEach(option => {
         option.classList.toggle('active', option.dataset.ratio === ratio);
@@ -290,11 +382,15 @@ function updatePreviewHeader(banner) {
         return;
     }
 
+    const priceForDisplay = banner.data.has_offer
+        ? banner.data.offer_price
+        : (banner.data.normal_price || banner.data.original_price || banner.data.offer_price);
+
     titleEl.textContent = banner.data.title || 'Producto sin nombre';
-    metaEl.textContent = `${banner.data.store_name || 'Tienda'} · ${banner.ratio} · ${banner.data.offer_price ? formatPrice(banner.data.offer_price) : 'Sin precio'}`;
+    metaEl.textContent = `${banner.data.store_name || 'Tienda'} · ${banner.ratio} · ${priceForDisplay ? formatPrice(priceForDisplay) : 'Sin precio'}`;
     templateEl.textContent = `Plantilla: {{ template.name }}`;
     storeEl.textContent = `Tienda: ${banner.data.store_name || 'No detectada'}`;
-    priceEl.textContent = `Precio: ${banner.data.offer_price ? formatPrice(banner.data.offer_price) : 'Sin precio'}`;
+    priceEl.textContent = `Precio: ${priceForDisplay ? formatPrice(priceForDisplay) : 'Sin precio'}`;
     formatEl.textContent = `Formato: ${banner.ratio}`;
     downloadFormatEl.textContent = `Archivo: ${(banner.downloadFormat || 'png').toUpperCase() === 'JPEG' ? 'JPG' : (banner.downloadFormat || 'png').toUpperCase()}`;
     downloadBtn.disabled = false;
@@ -311,10 +407,71 @@ function updateGeneratedSummary() {
     document.getElementById('generatedEmptyState').style.display = total === 0 ? 'flex' : 'none';
 }
 
+function getPaginatedBanners() {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return generatedBanners.slice(startIndex, endIndex);
+}
+
+function getTotalPages() {
+    return Math.ceil(generatedBanners.length / ITEMS_PER_PAGE);
+}
+
+function renderPagination() {
+    const paginationEl = document.getElementById('generatedPagination');
+    const totalPages = getTotalPages();
+
+    if (totalPages <= 1) {
+        paginationEl.style.display = 'none';
+        return;
+    }
+
+    paginationEl.style.display = 'flex';
+    paginationEl.innerHTML = '';
+
+    // Botón anterior
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'btn-outline-light-custom pagination-btn';
+    prevBtn.innerHTML = '<i class="bi bi-chevron-left"></i>';
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => goToPage(currentPage - 1);
+    paginationEl.appendChild(prevBtn);
+
+    // Números de página
+    for (let i = 1; i <= totalPages; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
+        pageBtn.textContent = i;
+        pageBtn.onclick = () => goToPage(i);
+        paginationEl.appendChild(pageBtn);
+    }
+
+    // Botón siguiente
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn-outline-light-custom pagination-btn';
+    nextBtn.innerHTML = '<i class="bi bi-chevron-right"></i>';
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => goToPage(currentPage + 1);
+    paginationEl.appendChild(nextBtn);
+}
+
+function goToPage(pageNum) {
+    const totalPages = getTotalPages();
+    if (pageNum < 1 || pageNum > totalPages) return;
+    currentPage = pageNum;
+    renderGeneratedList();
+}
+
 function renderGeneratedList() {
     const listEl = document.getElementById('generatedList');
+    const paginatedBanners = getPaginatedBanners();
 
-    listEl.innerHTML = generatedBanners.map(banner => `
+    listEl.innerHTML = paginatedBanners.map(banner => {
+        const displayPrice = banner.data.has_offer
+            ? banner.data.offer_price
+            : (banner.data.normal_price || banner.data.original_price || banner.data.offer_price);
+
+        return `
         <article class="generated-item ${banner.id === activeBannerId ? 'is-active' : ''}">
             <label class="generated-item-select" aria-label="Seleccionar ${escapeHtml(banner.data.title || 'banner')}">
                 <input type="checkbox" ${banner.selected ? 'checked' : ''} onchange="toggleBannerSelection(${banner.id}, this.checked)">
@@ -326,7 +483,7 @@ function renderGeneratedList() {
                 <strong>${escapeHtml(truncateText(banner.data.title || 'Producto sin nombre', 70))}</strong>
                 <span>${escapeHtml(banner.data.store_name || 'Tienda sin nombre')}</span>
                 <small>Plantilla: ${escapeHtml('{{ template.name }}')}</small>
-                <small>Formato: ${escapeHtml(banner.ratio)} · ${escapeHtml(banner.data.offer_price ? formatPrice(banner.data.offer_price) : 'Sin precio')}</small>
+                <small>Formato: ${escapeHtml(banner.ratio)} · ${escapeHtml(displayPrice ? formatPrice(displayPrice) : 'Sin precio')}</small>
             </div>
             <div class="generated-item-actions">
                 <label class="generated-item-format" aria-label="Formato visual para ${escapeHtml(banner.data.title || 'banner')}">
@@ -355,16 +512,28 @@ function renderGeneratedList() {
                     <i class="bi bi-trash"></i>
                 </button>
             </div>
+            <div class="generated-item-affiliate ${banner.affiliateLink ? '' : 'is-warning'}">
+                <strong>Link afiliado:</strong>
+                ${banner.affiliateLink
+                    ? `<input type="text" class="generated-item-affiliate-input" value="${escapeHtml(banner.affiliateLink)}" readonly aria-label="Link de afiliado para ${escapeHtml(banner.data.title || 'banner')}">`
+                    : `<span class="generated-item-affiliate-warning">${escapeHtml(banner.affiliateWarning || 'No se pudo generar el link de afiliado. Revisa tu configuración de afiliados.')}</span>`}
+                ${banner.affiliateLink
+                    ? `<button class="btn-outline-light-custom btn-sm generated-item-affiliate-copy ${copiedAffiliateBannerId === banner.id ? 'is-copied' : ''}" type="button" onclick="copyAffiliateLink(${banner.id})">${copiedAffiliateBannerId === banner.id ? '<i class="bi bi-check-circle-fill me-1"></i>Copiado' : 'Copiar'}</button>`
+                    : ''}
+            </div>
         </article>
-    `).join('');
+    `;
+    }).join('');
 
+    renderPagination();
     updateGeneratedSummary();
 }
 
-async function loadCanvasFormat(targetCanvas, ratio) {
+async function loadCanvasFormat(targetCanvas, ratio, banner = null) {
     const format = FORMATS[ratio] || FORMATS['1:1'];
     const displayH = CANVAS_DISPLAY * (format.h / format.w);
-    const formatData = allFormatsData[ratio] || allFormatsData['1:1'];
+    const editedData = banner?.editedFormatsData?.[ratio];
+    const formatData = editedData || allFormatsData[ratio] || allFormatsData['1:1'];
 
     currentFormat = { w: format.w, h: format.h };
     currentRatio = ratio;
@@ -403,13 +572,14 @@ async function applyDataToCanvas(targetCanvas, data) {
                 break;
             case 'original_price':
                 if (obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox') {
-                    obj.set('text', data.original_price ? formatPrice(data.original_price) : '');
-                    obj.set('linethrough', Boolean(data.original_price && data.original_price !== data.offer_price));
+                    const normalPrice = data.normal_price || data.original_price || data.offer_price;
+                    obj.set('text', normalPrice ? formatPrice(normalPrice) : '');
+                    obj.set('linethrough', Boolean(data.has_offer && data.original_price && data.original_price !== data.offer_price));
                 }
                 break;
             case 'offer_price':
                 if (obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox') {
-                    obj.set('text', data.offer_price ? formatPrice(data.offer_price) : '');
+                    obj.set('text', data.has_offer ? (data.offer_price ? formatPrice(data.offer_price) : '') : '');
                 }
                 break;
             case 'store_name':
@@ -515,6 +685,8 @@ function openPreviewDrawer() {
 }
 
 function closePreviewDrawer() {
+    saveActiveBannerCanvasState();
+
     const drawer = document.getElementById('previewDrawer');
     drawer.classList.remove('is-open');
     drawer.setAttribute('aria-hidden', 'true');
@@ -531,11 +703,22 @@ async function renderBannerPreview(banner, options = {}) {
 
     const shouldOpen = options.open !== false;
 
+    if (activeBannerId && activeBannerId !== banner.id) {
+        saveActiveBannerCanvasState();
+    }
+
     activeBannerId = banner.id;
     lastScrapedData = banner.data;
-    await loadCanvasFormat(canvas, banner.ratio);
-    await applyDataToCanvas(canvas, banner.data);
-    banner.thumbnail = buildCanvasSnapshot();
+
+    isCanvasHydrating = true;
+    try {
+        await loadCanvasFormat(canvas, banner.ratio, banner);
+        await applyDataToCanvas(canvas, banner.data);
+    } finally {
+        isCanvasHydrating = false;
+    }
+
+    saveBannerCanvasState(banner, banner.ratio);
     updatePreviewHeader(banner);
     if (shouldOpen) {
         openPreviewDrawer();
@@ -549,6 +732,8 @@ async function withPreservedPreview(work) {
     const previousBanner = previousActiveId ? getBannerById(previousActiveId) : null;
 
     await work();
+
+    saveActiveBannerCanvasState();
 
     if (previousDrawerState && previousBanner) {
         await renderBannerPreview(previousBanner, { open: true });
@@ -566,8 +751,11 @@ async function addGeneratedBanner(data) {
         data: cloneDeep(data),
         ratio: currentRatio,
         downloadFormat: 'png',
+        affiliateLink: (data.affiliate_link || '').trim(),
+        affiliateWarning: (data.affiliate_warning || '').trim(),
         selected: false,
         thumbnail: '',
+        editedFormatsData: {},
     };
 
     generatedBanners = [...generatedBanners, banner];
@@ -673,6 +861,7 @@ async function selectFormat(el) {
         return;
     }
 
+    saveActiveBannerCanvasState();
     banner.ratio = ratio;
     await renderBannerPreview(banner);
 }
@@ -709,6 +898,42 @@ function updateBannerDownloadFormat(id, format) {
     }
 
     renderGeneratedList();
+}
+
+async function copyAffiliateLink(id) {
+    const banner = getBannerById(id);
+    const link = (banner?.affiliateLink || '').trim();
+    if (!link) {
+        alert('No hay link de afiliado disponible para copiar.');
+        return;
+    }
+
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(link);
+        } else {
+            const helper = document.createElement('textarea');
+            helper.value = link;
+            helper.setAttribute('readonly', '');
+            helper.style.position = 'absolute';
+            helper.style.left = '-9999px';
+            document.body.appendChild(helper);
+            helper.select();
+            document.execCommand('copy');
+            document.body.removeChild(helper);
+        }
+
+        copiedAffiliateBannerId = id;
+        renderGeneratedList();
+        window.setTimeout(() => {
+            if (copiedAffiliateBannerId === id) {
+                copiedAffiliateBannerId = null;
+                renderGeneratedList();
+            }
+        }, 1300);
+    } catch (error) {
+        alert('No se pudo copiar el link de afiliado.');
+    }
 }
 
 async function updateBannerRatio(id, ratio) {
@@ -750,6 +975,7 @@ function clearGeneratedBanners() {
     }
 
     generatedBanners = [];
+    currentPage = 1;
     closePreviewDrawer();
 }
 
@@ -766,6 +992,12 @@ function deleteGeneratedBanner(id) {
 
     generatedBanners = generatedBanners.filter(item => item.id !== id);
 
+    // Ajustar página si es necesario
+    const totalPages = getTotalPages();
+    if (currentPage > totalPages) {
+        currentPage = Math.max(1, totalPages);
+    }
+
     if (activeBannerId === id) {
         closePreviewDrawer();
         return;
@@ -773,6 +1005,18 @@ function deleteGeneratedBanner(id) {
 
     renderGeneratedList();
 }
+
+canvas.on('object:modified', () => {
+    saveActiveBannerCanvasState();
+});
+
+canvas.on('text:changed', () => {
+    saveActiveBannerCanvasState();
+});
+
+canvas.on('object:removed', () => {
+    saveActiveBannerCanvasState();
+});
 
 function buildDownloadName(banner, format) {
     const title = slugify(banner.data.title || 'banner');
