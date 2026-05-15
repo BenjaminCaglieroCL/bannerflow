@@ -50,7 +50,7 @@
                 <span class="format-default-name">Publicación Horizontal</span>
                 <span class="format-default-dims">1080×566</span>
             </button>
-            <button class="format-default-btn active" data-ratio="4:5" onclick="setDefaultFormat(this)" type="button">
+            <button class="format-default-btn" data-ratio="4:5" onclick="setDefaultFormat(this)" type="button">
                 <div class="format-default-visual">
                     <div class="format-default-shape ratio-4-5"></div>
                 </div>
@@ -58,7 +58,7 @@
                 <span class="format-default-name">Estándar</span>
                 <span class="format-default-dims">1080×1350</span>
             </button>
-            <button class="format-default-btn" data-ratio="9:16" onclick="setDefaultFormat(this)" type="button">
+            <button class="format-default-btn active" data-ratio="9:16" onclick="setDefaultFormat(this)" type="button">
                 <div class="format-default-visual">
                     <div class="format-default-shape ratio-9-16"></div>
                 </div>
@@ -758,7 +758,7 @@ async function addGeneratedBanner(data) {
         editedFormatsData: {},
     };
 
-    generatedBanners = [...generatedBanners, banner];
+    generatedBanners = [banner, ...generatedBanners];
     await withPreservedPreview(async () => {
         await renderBannerPreview(banner, { open: false });
         await persistGeneratedBanner(banner);
